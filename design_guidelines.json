@@ -1,0 +1,157 @@
+{
+  "project_name": "Aleana Rose C. Amurao — Full-Stack Developer & Systems Interface Portfolio",
+  "archetype": "THE PERFORMANCE PRO & SWISS FUTURIST",
+  "theme": {
+    "default_mode": "dark",
+    "dark": {
+      "bg_primary": "#070611",
+      "bg_secondary": "#0E0C20",
+      "bg_tertiary": "#15132E",
+      "surface_card": "#0B0A1A",
+      "border": "#211E3F",
+      "text_primary": "#F8FAFC",
+      "text_secondary": "#94A3B8",
+      "text_muted": "#64748B",
+      "accent_purple": "#A855F7",
+      "accent_cyan": "#06B6D4",
+      "accent_pink": "#F43F5E",
+      "accent_amber": "#F59E0B",
+      "accent_green": "#10B981"
+    },
+    "light": {
+      "bg_primary": "#F8FAFB",
+      "bg_secondary": "#F1F5F9",
+      "bg_tertiary": "#E2E8F0",
+      "surface_card": "#FFFFFF",
+      "border": "#CBD5E1",
+      "text_primary": "#0F172A",
+      "text_secondary": "#334155",
+      "text_muted": "#64748B",
+      "accent_purple": "#7C3AED",
+      "accent_cyan": "#0891B2",
+      "accent_pink": "#E11D48",
+      "accent_amber": "#D97706",
+      "accent_green": "#059669"
+    }
+  },
+  "typography": {
+    "font_display": "'Manrope', 'Outfit', sans-serif",
+    "font_body": "'Inter', 'Geist', sans-serif",
+    "font_mono": "'JetBrains Mono', 'Fira Code', monospace",
+    "hierarchy": {
+      "hero_title": "text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-none",
+      "section_title": "text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight",
+      "subsection_title": "text-xl sm:text-2xl font-semibold",
+      "card_title": "text-lg sm:text-xl font-semibold font-mono",
+      "tech_label": "text-xs font-mono uppercase tracking-[0.2em] text-purple-400 dark:text-purple-400 text-purple-700",
+      "body": "text-sm sm:text-base leading-relaxed"
+    }
+  },
+  "design_motif": {
+    "concept": "Software systems visualized as a personal career interface",
+    "visual_elements": [
+      "Thin outlined 1px containers with subgrid lines and coordinate indicators (e.g. SYS.LOC // 01)",
+      "Monospace system status bars (STATUS: ONLINE, LATENCY: 24ms, BUILD: PASSED)",
+      "Architecture diagram panels with node connections and glowing SVG vector paths",
+      "Git commit timeline for developer journey (JOURNEY.LOG with hash, branch, author, timestamp)",
+      "Interactive system profile visualization with animated skill telemetry and radar/bar charts",
+      "Deployment log output simulation for contact form submission"
+    ]
+  },
+  "sections_and_components": {
+    "navigation": {
+      "style": "Glassmorphism header with system telemetry indicator, theme switcher (Light/Dark/System), Cmd+K command palette button, quick status pill, and direct navigation links",
+      "links": ["/about", "/services", "/projects", "/stack", "/pricing", "/contact", "/admin"]
+    },
+    "hero": {
+      "tagline": "ALEANA ROSE C. AMURAO // BS IT @ CENTRAL LUZON STATE UNIVERSITY",
+      "title": "I BUILD SYSTEMS THAT WORK BEYOND THE INTERFACE.",
+      "subtitle": "Full-Stack Developer • Systems Developer • UI/UX Designer • Freelance Technology Partner",
+      "features": [
+        "Kinetic line-by-line reveal animation",
+        "Interactive System Profile widget with animated skill status bars and active terminal logs",
+        "Quick CTA triggers ('INITIALIZE INQUIRY', 'VIEW SYSTEM ARCHIVE', 'DOWNLOAD CV')"
+      ]
+    },
+    "services": {
+      "categories_count": 7,
+      "categories": [
+        "1. Full-Stack Web Systems (React, FastAPI, PostgreSQL, Node.js)",
+        "2. Custom Enterprise & School Systems (CLSU Capstone / ERP / Portal Architecture)",
+        "3. UI/UX Interface Design & Prototyping (Figma to Pixel-Perfect Code)",
+        "4. RESTful API & Backend Microservices (FastAPI, Python, Auth, Webhooks)",
+        "5. Database Architecture & Optimization (PostgreSQL, MySQL, Redis, ORMs)",
+        "6. E-Commerce & Payment Gateways (Stripe, GCash API, Custom Storefronts)",
+        "7. Maintenance, Refactoring & Tech Advisory (Code Audit, Security, Performance)"
+      ],
+      "layout": "Technical system panels with capability rows, active status indicators (ONLINE / AVAILABLE), and service parameter cards"
+    },
+    "featured_projects": {
+      "format": "Numbered system records (e.g., REC-001, REC-002) with high-density bento grid",
+      "features": [
+        "Interactive case study drawer / modal",
+        "Full architecture diagram with interactive nodes (Frontend -> API Gateway -> Microservice -> Database)",
+        "Live demo preview simulation, tech tags, metrics (e.g., 99.9% uptime, 120ms response time)"
+      ]
+    },
+    "developer_journey": {
+      "title": "JOURNEY.LOG // GIT REPOSITORY HISTORY",
+      "format": "Interactive Git-commit timeline showing academic milestones at CLSU, freelance client milestones, tech migrations, and major system releases"
+    },
+    "tech_stack": {
+      "labeling": "Strictly use CORE (Primary Daily Drivers) and WORKING KNOWLEDGE (Production Competent) badges rather than misleading percentage bars",
+      "categories": ["Frontend", "Backend & APIs", "Database & Storage", "DevOps & Tools", "Design & UX"]
+    },
+    "pricing_and_quote_estimator": {
+      "pricing_cards": "PHP (₱) starting-from technical specification tiers (Starter Web App ₱15,000+, Full-Stack Enterprise System ₱35,000+, UI/UX System Audit ₱8,000+)",
+      "quote_estimator": "Interactive multi-step system cost calculator allowing prospective clients to toggle features (Auth, Payments, Admin Panel, API integration, Urgency) and get real-time ₱ estimates with instant pre-filled inquiry submission"
+    },
+    "contact": {
+      "feature": "Deployment-style status sequence on submit ('COMPILING PAYLOAD...', 'ESTABLISHING SSL...', 'DISPATCHING TO ALEANA...', 'SUCCESS 200 OK')"
+    },
+    "command_palette": {
+      "shortcut": "Cmd+K / Ctrl+K",
+      "actions": ["Jump to sections", "Switch theme", "Download Resume PDF", "Launch Quote Estimator", "Contact Aleana", "Access Admin Portal"]
+    },
+    "admin_panel": {
+      "route": "/admin",
+      "features": [
+        "System Metrics Overview (Total Inquiries, Active Projects, Revenue Estimates)",
+        "Projects Manager (Add/Edit/Delete project records, tags, architecture specs)",
+        "Services & Pricing Manager",
+        "Site Settings & Telemetry Config (Bio, Hero copy, Available status toggle)",
+        "Inquiry Log Viewer with deployment status tags"
+      ]
+    }
+  },
+  "image_urls": {
+    "developer_portrait": "https://images.unsplash.com/photo-1580894908361-967195033215?crop=entropy&cs=srgb&fm=jpg&q=85",
+    "code_workspace": "https://images.unsplash.com/photo-1629904853893-c2c8981a1dc5?crop=entropy&cs=srgb&fm=jpg&q=85",
+    "system_architecture": "https://images.unsplash.com/photo-1511376777868-611b54f68947?crop=entropy&cs=srgb&fm=jpg&q=85"
+  },
+  "motion_and_interactions": {
+    "library": "framer-motion & lenis smooth scroll",
+    "effects": [
+      "Masked line-by-line kinetic title entrance",
+      "Hover micro-interactions: 'VIEW PROJECT →' shifts into 'OPEN /PROJECT/001 →'",
+      "Terminal typing effect for system logs",
+      "Subtle radar pulse animation on status indicators",
+      "Smooth layout transitions in bento cards"
+    ]
+  },
+  "accessibility_and_testing": {
+    "data_testid_required": true,
+    "rules": [
+      "All interactive elements (buttons, inputs, filters, theme toggle, modals) MUST contain data-testid in kebab-case format.",
+      "Must support prefers-reduced-motion to halt heavy loops or typing effects.",
+      "Ensure color contrast meets WCAG AA standards in both dark and light modes."
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Build a single-page or multi-view rich React portfolio with integrated client-side state / mock API handlers for admin panel and quote estimator.",
+    "Implement the theme switcher state cleanly using class toggling on the document element ('dark' vs 'light').",
+    "Use JetBrains Mono / monospace styling for metadata, tags, system headers, and git logs to reinforce the terminal/database aesthetic.",
+    "Make sure every section feels visually dense, precision-crafted, and functional.",
+    "Ensure all buttons, form inputs, navigation items, cards, and modal triggers have data-testid attributes."
+  ]
+}
