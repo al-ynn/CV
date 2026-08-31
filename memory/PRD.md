@@ -31,6 +31,16 @@ aesthetic + polished light mode. Concept: "a résumé encoded into a software in
   custom section builder (text/quote/cards/timeline/gallery/cta), dynamic stats
   computed from real DB counts, per-profile SEO fields, autosave drafts (20s) +
   unsaved-changes guard, device preview modal (desktop/tablet/mobile iframe)
+- Homepage CMS (v4): homepage_config with draft/published documents — Save Draft keeps
+  the public page untouched until Publish; preview tokens (desktop/tablet/mobile);
+  revision history. All sections manageable: hero, System Profile (identity fields +
+  capability editor with 5-step proficiency scale LEARNING→CORE replacing fake
+  percentages; configurable project metric: auto-published/auto-featured/manual/hidden),
+  homepage metrics (DB-derived, selectable), featured projects (reference Projects CMS,
+  order + display toggles + max), What I Build items, services selection (references
+  Services CMS), tech stack visibility (statuses via Technologies CMS), Scrum/Prototype
+  roadmap (12 editable stages + iteration loop visualization), journey log
+  (latest/selected/all modes), final CTA, master section visibility + ordering
 - Rewritten professional story content (athlete → shift → SoilTrack → working
   student → senior target) seeded as "Professional About 2026" (published, T04)
 - Public site: Home (CMS-driven hero, section visibility toggles, announcement bar),

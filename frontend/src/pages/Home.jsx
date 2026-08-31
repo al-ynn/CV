@@ -3,37 +3,23 @@ import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useContent } from "../lib/content";
 import useSeo from "../lib/useSeo";
-import { MARQUEE_ITEMS, PROCESS, WHAT_I_BUILD } from "../data/content";
-import { SectionHead, TechLabel, StatusDot, SwapText, Reveal, LevelTag } from "../components/system/bits";
+import { MARQUEE_ITEMS } from "../data/content";
+import { SectionHead, TechLabel, StatusDot, SwapText, Reveal, LevelTag, StatusScale } from "../components/system/bits";
 import Marquee from "../components/system/Marquee";
 import ProjectRecord from "../components/ProjectRecord";
 
-const BARS = [
-  { label: "FRONTEND", val: 87, color: "var(--cyan)" },
-  { label: "BACKEND", val: 92, color: "var(--violet)" },
-  { label: "DATABASE", val: 85, color: "var(--pink)" },
-  { label: "UI / UX", val: 78, color: "var(--amber)" },
-  { label: "SYSTEM DESIGN", val: 82, color: "var(--violet)" },
-];
+const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
 function HeroTitle({ text }) {
-  const lines = (text || "I BUILD SYSTEMS\nTHAT WORK BEYOND\nTHE *INTERFACE.*").split("\n");
+  const lines = (text || "").split("\n");
   return (
     <h1 className="font-display font-extrabold tracking-tight leading-[0.95] text-[13vw] sm:text-6xl lg:text-7xl xl:text-[5.2rem] text-ink">
       {lines.map((line, i) => (
         <span key={i} className="block overflow-hidden pb-1">
-          <motion.span
-            className="block"
-            initial={{ y: "112%" }}
-            animate={{ y: 0 }}
-            transition={{ delay: 0.2 + i * 0.13, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          >
+          <motion.span className="block" initial={{ y: "112%" }} animate={{ y: 0 }}
+            transition={{ delay: 0.2 + i * 0.13, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
             {line.split(/(\*[^*]+\*)/g).map((part, j) =>
-              part.startsWith("*") ? (
-                <span key={j} className="text-violet">{part.replaceAll("*", "")}</span>
-              ) : (
-                part
-              )
+              part.startsWith("*") ? <span key={j} className="text-violet">{part.replaceAll("*", "")}</span> : part
             )}
           </motion.span>
         </span>
@@ -42,11 +28,19 @@ function HeroTitle({ text }) {
   );
 }
 
-function SystemProfile({ projectCount }) {
+function SystemProfile({ cfg, content }) {
+  const caps = (cfg.capabilities || []).filter((c) => c.visible);
+  const metric = cfg.projectMetric || {};
+  const metricValue =
+    metric.mode === "hidden" ? null :
+    metric.mode === "manual" ? metric.manualValue :
+    metric.mode === "auto-featured" ? String(content.projects.filter((p) => p.featured).length) :
+    String(content.projects.length);
+  const s = content.settings;
   return (
     <div className="panel relative overflow-hidden" data-testid="system-profile">
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-line">
-        <span className="font-mono text-[10px] tracking-[0.25em] text-violet">SYSTEM PROFILE</span>
+        <span className="font-mono text-[10px] tracking-[0.25em] text-violet">{cfg.label || "SYSTEM PROFILE"}</span>
         <div className="flex gap-1.5">
           <span className="w-2 h-2 rounded-full bg-pk/70" />
           <span className="w-2 h-2 rounded-full bg-amb/70" />
@@ -54,41 +48,37 @@ function SystemProfile({ projectCount }) {
         </div>
       </div>
       <div className="p-5 sm:p-6">
-        <div className="font-mono text-xs text-ink mb-1">ALEANA_AMURAO</div>
-        <div className="font-mono text-[10px] tracking-[0.2em] text-ink3 mb-6">FULL_STACK_DEVELOPER</div>
-        <div className="space-y-3.5">
-          {BARS.map((b, i) => (
-            <div key={b.label}>
-              <div className="flex justify-between font-mono text-[9px] tracking-[0.2em] text-ink3 mb-1.5">
-                <span>{b.label}</span>
-                <span style={{ color: b.color }}>{b.val}%</span>
-              </div>
-              <div className="h-1.5 bg-canvas2 overflow-hidden">
-                <motion.div
-                  className="h-full"
-                  style={{ backgroundColor: b.color }}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${b.val}%` }}
-                  transition={{ delay: 0.9 + i * 0.12, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                />
-              </div>
-            </div>
+        <div className="font-mono text-xs text-ink mb-1">{cfg.displayName}</div>
+        <div className="font-mono text-[10px] tracking-[0.2em] text-ink3 mb-1">{cfg.role}</div>
+        {cfg.secondaryTitle && <div className="font-mono text-[9px] tracking-[0.2em] text-ink3 mb-6">{cfg.secondaryTitle}</div>}
+        <div className="space-y-4 mt-5">
+          {caps.map((c, i) => (
+            <motion.div key={c.label} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.8 + i * 0.07, duration: 0.4 }}>
+              <div className="font-mono text-[9px] tracking-[0.2em] text-ink3 mb-1.5 uppercase">{c.label}</div>
+              <StatusScale status={c.status} />
+            </motion.div>
           ))}
         </div>
         <div className="grid grid-cols-3 gap-px bg-line border border-line mt-7">
-          {[
-            { k: "STATUS", v: "AVAILABLE", dot: true },
-            { k: "PROJECTS", v: `${projectCount} DEPLOYED` },
-            { k: "LOCATION", v: "PHILIPPINES" },
-          ].map((cell) => (
-            <div key={cell.k} className="bg-card px-3 py-3">
-              <div className="font-mono text-[8px] tracking-[0.2em] text-ink3 mb-1">{cell.k}</div>
-              <div className="font-mono text-[10px] tracking-[0.1em] text-ink flex items-center gap-1.5">
-                {cell.dot && <StatusDot />}
-                {cell.v}
-              </div>
+          <div className="bg-card px-3 py-3">
+            <div className="font-mono text-[8px] tracking-[0.2em] text-ink3 mb-1">STATUS</div>
+            <div className="font-mono text-[10px] tracking-[0.1em] flex items-center gap-1.5"
+              style={{ color: s.available ? "var(--green)" : "var(--amber)" }}>
+              <StatusDot color={s.available ? "var(--green)" : "var(--amber)"} />
+              {(s.availability || "available").toUpperCase()}
             </div>
-          ))}
+          </div>
+          {metricValue !== null && (
+            <div className="bg-card px-3 py-3">
+              <div className="font-mono text-[8px] tracking-[0.2em] text-ink3 mb-1">PROJECTS</div>
+              <div className="font-mono text-[10px] tracking-[0.1em] text-ink">{metricValue} {metric.label || "DEPLOYED"}</div>
+            </div>
+          )}
+          <div className="bg-card px-3 py-3">
+            <div className="font-mono text-[8px] tracking-[0.2em] text-ink3 mb-1">LOCATION</div>
+            <div className="font-mono text-[10px] tracking-[0.1em] text-ink">{cfg.location || "PHILIPPINES"}</div>
+          </div>
         </div>
         <div className="mt-6 flex items-center gap-2 font-mono text-[9px] tracking-[0.15em] text-ink3">
           {["USER", "UI", "API", "DB"].map((n, i) => (
@@ -103,291 +93,387 @@ function SystemProfile({ projectCount }) {
   );
 }
 
-export default function Home() {
-  const { projects, services, pricing, settings, homepage, skills, journey, loading } = useContent();
-  useSeo(null);
+function MetricsStrip({ cfg, content }) {
+  const values = {
+    projects: String(content.projects.length).padStart(2, "0"),
+    technologies: String(content.technologies.length).padStart(2, "0"),
+    services: String(content.services.reduce((n, s) => n + (s.capabilities || []).length, 0)).padStart(2, "0"),
+    serviceCategories: String(content.services.length).padStart(2, "0"),
+    certifications: String(content.certifications.length).padStart(2, "0"),
+    education: content.education[0] ? "BS IT · CLSU" : "—",
+  };
+  const colors = ["var(--green)", "var(--violet)", "var(--cyan)", "var(--amber)", "var(--pink)"];
+  const items = (cfg.items || []).filter((m) => m.visible);
+  if (!items.length) return null;
+  return (
+    <section className="border-y border-line" data-testid="home-metrics">
+      <div className={`mx-auto max-w-[1440px] grid grid-cols-2 lg:grid-cols-${Math.min(items.length, 5)}`}>
+        {items.map((m, i) => (
+          <Reveal key={m.key} delay={i * 0.06}
+            className={`px-5 sm:px-8 py-7 border-line ${i > 0 ? "border-l" : ""} ${i > 1 ? "max-lg:border-t max-lg:border-l-0" : ""} ${i % 2 === 1 ? "max-lg:border-l" : ""}`}>
+            <TechLabel className="block mb-2">{m.label}</TechLabel>
+            <span className="font-mono text-xl sm:text-2xl font-bold tabular-nums" style={{ color: colors[i % colors.length] }}>
+              {values[m.key] ?? "—"}
+            </span>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FeaturedProjects({ cfg, content }) {
+  const byId = Object.fromEntries(content.projects.map((p) => [p.id, p]));
+  let list = (cfg.ids || []).map((id) => byId[id]).filter(Boolean);
+  if (!list.length) list = content.projects.filter((p) => p.featured);
+  list = list.slice(0, cfg.max || 4);
+  if (!list.length) return null;
+  return (
+    <section className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28" data-testid="home-featured">
+      <SectionHead num="" title={cfg.heading || "FEATURED PROJECTS"}
+        sub={cfg.label}
+        right={
+          <Link to="/work" data-testid="home-all-work"
+            className="group font-mono text-[10px] tracking-[0.2em] uppercase text-ink2 hover:text-violet transition-colors whitespace-nowrap">
+            <SwapText label="Full Archive →" alt="Open /Work →" />
+          </Link>
+        } />
+      <div className="grid lg:grid-cols-3 gap-5">
+        {list.map((p, i) => (
+          <ProjectRecord key={p.id} project={p} index={i} large={i === 0} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function WhatIBuild({ cfg }) {
+  const items = (cfg.items || []).filter((i) => i.visible);
+  if (!items.length) return null;
+  return (
+    <section className="border-y border-line bg-canvas2/40" data-testid="home-whatibuild">
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
+        <SectionHead num="" title={cfg.heading || "WHAT I BUILD"} />
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line">
+          {items.map((w, i) => (
+            <Reveal key={w.title + i} delay={i * 0.07} className="bg-card p-7 group hover:bg-canvas2/60 transition-colors">
+              <span className="font-mono text-[10px] tracking-[0.3em] text-violet">{w.techLabel || String(i + 1).padStart(2, "0")}</span>
+              <h3 className="mt-4 font-display text-lg font-bold tracking-tight text-ink group-hover:text-violet transition-colors">{w.title}</h3>
+              <p className="mt-3 text-sm text-ink2 leading-relaxed">{w.desc}</p>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ServicesPreview({ cfg, content }) {
+  const byId = Object.fromEntries(content.services.map((s) => [s.id, s]));
+  let list = (cfg.ids || []).map((id) => byId[id]).filter(Boolean);
+  if (!list.length) list = content.services;
+  list = list.slice(0, cfg.max || 7);
+  if (!list.length) return null;
+  return (
+    <section className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28" data-testid="home-services">
+      <SectionHead num="" title={`${cfg.heading || "SERVICES"} / ${String(content.services.length).padStart(2, "0")}`}
+        sub="Service areas. Each one a stack of specialized capabilities." />
+      <div className="border-t border-line">
+        {list.map((s, i) => (
+          <Reveal key={s.id} delay={i * 0.04}>
+            <Link to="/services" data-testid={`home-service-${s.id}`}
+              className="group flex items-center gap-4 sm:gap-8 py-5 border-b border-line hover:bg-canvas2/50 transition-colors px-2 sm:px-4">
+              <span className="font-mono text-[11px] text-violet tracking-[0.2em] w-8 shrink-0">{s.num}</span>
+              <span className="font-display text-base sm:text-xl font-bold tracking-tight text-ink group-hover:text-violet transition-colors flex-1 min-w-0 truncate">{s.title}</span>
+              {cfg.showCount !== false && (
+                <span className="hidden md:block font-mono text-[9px] tracking-[0.15em] text-ink3 uppercase">
+                  {(s.capabilities || []).length} SERVICES
+                </span>
+              )}
+              <span className="font-mono text-xs text-ink3 group-hover:text-violet group-hover:translate-x-1 transition-all">→</span>
+            </Link>
+          </Reveal>
+        ))}
+      </div>
+      {cfg.ctaLabel && (
+        <Link to="/services" data-testid="home-services-cta"
+          className="mt-8 inline-flex h-11 items-center px-6 border border-line font-mono text-[10px] tracking-[0.2em] uppercase text-ink2 hover:border-violet hover:text-violet transition-colors">
+          {cfg.ctaLabel}
+        </Link>
+      )}
+    </section>
+  );
+}
+
+function TechStack({ cfg, content }) {
+  const byId = Object.fromEntries(content.technologies.map((t) => [t.id, t]));
+  let list = (cfg.ids || []).map((id) => byId[id]).filter(Boolean);
+  if (!list.length) list = content.technologies;
+  if (!list.length) return null;
+  const byCat = {};
+  list.forEach((t) => { (byCat[t.category || "Other"] = byCat[t.category || "Other"] || []).push(t); });
+  return (
+    <section className="border-y border-line bg-canvas2/40" data-testid="home-techstack">
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
+        <SectionHead num="" title={cfg.heading || "TECHNICAL STACK"} sub={cfg.sub} />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {Object.entries(byCat).map(([cat, items], i) => (
+            <Reveal key={cat} delay={i * 0.05} className="panel p-6">
+              <TechLabel className="block mb-4 text-violet">TECH_STACK / {cat.toUpperCase()}</TechLabel>
+              <ul className="space-y-2.5">
+                {items.map((t) => (
+                  <li key={t.id} className="flex items-center justify-between gap-3">
+                    <span className="font-mono text-xs text-ink">{t.name}</span>
+                    <LevelTag level={t.level} />
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Roadmap({ cfg }) {
+  const stages = (cfg.stages || []).filter((s) => s.visible);
+  if (!stages.length) return null;
+  const loopFrom = cfg.loopFrom || "REVIEW";
+  const loopTo = cfg.loopTo || "BUILD";
+  const loopStart = stages.findIndex((s) => s.title.includes(loopFrom));
+  const loopEnd = stages.findIndex((s) => s.title.includes(loopTo));
+  const inLoop = (i) => loopStart >= 0 && loopEnd >= 0 && loopEnd < loopStart && i > loopStart && i <= stages.length - 1;
+  const isLoopBack = (i) => loopStart >= 0 && loopEnd >= 0 && i === loopStart;
+  return (
+    <section className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28" data-testid="home-roadmap">
+      <SectionHead num="" title={cfg.heading || "SCRUM / PROTOTYPE ROADMAP"} sub={cfg.intro} />
+
+      {/* desktop: snake roadmap with iteration loop */}
+      <div className="hidden lg:block relative">
+        <div className="grid grid-cols-4 gap-5">
+          {stages.map((st, i) => (
+            <Reveal key={st.num + st.title} delay={i * 0.04}
+              className={`panel p-5 relative ${isLoopBack(i) ? "border-violet" : ""}`}>
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-mono text-base font-bold text-violet">{st.num}</span>
+                <span className="font-mono text-[8px] tracking-[0.2em] uppercase text-ink3">{st.type}</span>
+              </div>
+              <h4 className="font-display text-sm font-bold tracking-wide text-ink mb-2">{st.title}</h4>
+              <p className="font-mono text-[9px] text-ink3 leading-relaxed">{st.desc}</p>
+              {isLoopBack(i) && (
+                <span className="absolute -top-2.5 left-4 bg-canvas px-2 font-mono text-[8px] tracking-[0.2em] text-violet">
+                  ↺ ITERATION POINT
+                </span>
+              )}
+              {i < stages.length - 1 && (
+                <span className="absolute top-1/2 -right-4 z-10 font-mono text-ink3 text-xs">→</span>
+              )}
+            </Reveal>
+          ))}
+        </div>
+        {loopStart >= 0 && loopEnd >= 0 && loopEnd < loopStart && (
+          <div className="mt-5 panel px-5 py-3 flex items-center justify-center gap-4 font-mono text-[10px] tracking-[0.2em] uppercase">
+            <span className="text-violet">↺ ITERATION LOOP</span>
+            <span className="text-ink2">{loopFrom}</span>
+            <span className="text-ink3">→</span>
+            <span className="text-ink2">REFINE</span>
+            <span className="text-ink3">→</span>
+            <span className="text-violet">{loopTo}</span>
+            <span className="text-ink3">// repeats until accepted, then deploy</span>
+          </div>
+        )}
+      </div>
+
+      {/* mobile: vertical roadmap */}
+      <div className="lg:hidden">
+        {stages.map((st, i) => (
+          <div key={st.num + st.title} className="flex gap-4">
+            <div className="flex flex-col items-center">
+              <span className={`w-2.5 h-2.5 rounded-full mt-1.5 ${isLoopBack(i) ? "bg-violet" : "bg-line"}`} style={isLoopBack(i) ? {} : { backgroundColor: "var(--violet)", opacity: 0.5 }} />
+              {i < stages.length - 1 && <span className="w-px flex-1 bg-line" />}
+            </div>
+            <div className="pb-7">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-mono text-[10px] text-violet">{st.num}</span>
+                <span className="font-display text-sm font-bold text-ink">{st.title}</span>
+                {isLoopBack(i) && <span className="font-mono text-[8px] tracking-[0.2em] text-violet border border-violet/40 px-1.5 py-0.5">↺ LOOPS TO {loopTo}</span>}
+              </div>
+              <p className="mt-1 font-mono text-[10px] text-ink3 leading-relaxed">{st.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function JourneyPreview({ cfg, content }) {
+  const byId = Object.fromEntries((content.journey || []).map((j) => [j.id, j]));
+  let list;
+  if (cfg.mode === "selected") list = (cfg.ids || []).map((id) => byId[id]).filter(Boolean);
+  else if (cfg.mode === "all") list = content.journey;
+  else list = (content.journey || []).slice(-(cfg.max || 4));
+  if (!list.length) return null;
+  return (
+    <section className="border-y border-line bg-canvas2/40" data-testid="home-journey">
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28 grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <SectionHead num="" title={cfg.heading || "JOURNEY.LOG"} sub="Commit history of a developer career — progression, not pretense." />
+          <Link to="/journey" data-testid="home-journey-cta"
+            className="group inline-flex h-11 items-center px-6 border border-line font-mono text-[11px] tracking-[0.2em] uppercase text-ink hover:border-violet hover:text-violet transition-colors">
+            <SwapText label="View Full Log →" alt="Open /Journey →" />
+          </Link>
+        </div>
+        <div className="panel p-6 font-mono text-xs space-y-3">
+          <div className="text-ink3 text-[10px] tracking-[0.25em] mb-4">$ git log --career</div>
+          {list.map((j, i) => (
+            <Reveal key={j.id} delay={i * 0.08} className="flex gap-4">
+              <span className="text-violet shrink-0">{j.code}</span>
+              <div className="min-w-0">
+                <span className={j.milestoneType === "target" ? "text-amb" : j.milestoneType === "current" ? "text-grn" : "text-ink"}>
+                  {j.title}
+                </span>
+                <span className="text-ink3 ml-2">({j.year})</span>
+                {j.milestoneType === "target" && <span className="ml-2 text-[8px] tracking-[0.2em] text-amb border border-amb/40 px-1.5 py-0.5">TARGET</span>}
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FinalCta({ cfg, content }) {
+  return (
+    <section className="border-t border-line bg-grid" data-testid="home-final-cta">
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-24 sm:py-32 text-center">
+        <Reveal>
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <StatusDot color={content.settings.available ? "var(--green)" : "var(--amber)"} />
+            <TechLabel>{cfg.eyebrow}</TechLabel>
+          </div>
+          <h2 className="font-display font-extrabold tracking-tight leading-[0.95] text-5xl sm:text-7xl text-ink whitespace-pre-line">
+            {(cfg.heading || "").split(/(\*[^*]+\*)/g).map((part, j) =>
+              part.startsWith("*") ? <span key={j} className="text-violet">{part.replaceAll("*", "")}</span> : part
+            )}
+          </h2>
+          {cfg.body && <p className="mt-6 max-w-xl mx-auto text-sm sm:text-base text-ink2 leading-relaxed">{cfg.body}</p>}
+          <div className="mt-10 flex flex-wrap justify-center gap-4">
+            <Link to="/contact" data-testid="home-contact-cta"
+              className="inline-flex h-12 items-center px-8 bg-violet font-mono text-[11px] tracking-[0.2em] uppercase font-semibold hover:opacity-90 transition-opacity"
+              style={{ color: "var(--bg)" }}>
+              {cfg.buttonLabel || "LET'S TALK →"}
+            </Link>
+            <Link to="/pricing#estimator" data-testid="home-estimator-cta"
+              className="inline-flex h-12 items-center px-8 border border-line font-mono text-[11px] tracking-[0.2em] uppercase text-ink hover:border-violet hover:text-violet transition-colors">
+              Estimate Scope ₱
+            </Link>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+const SECTION_RENDERERS = {
+  metrics: MetricsStrip,
+  featuredProjects: FeaturedProjects,
+  whatIBuild: WhatIBuild,
+  services: ServicesPreview,
+  techStack: TechStack,
+  roadmap: Roadmap,
+  journey: JourneyPreview,
+  finalCta: FinalCta,
+};
+
+export function HomeRenderer({ config, content }) {
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const panelY = useTransform(scrollYProgress, [0, 1], [0, 90]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0.25]);
 
-  const sections = homepage.sections || {};
-  const show = (key) => sections[key] !== false;
-
-  const featured = projects.filter((p) => p.featured).slice(0, 3);
-  const shown = featured.length ? featured : projects.slice(0, 3);
-  const pricingPreview = pricing.filter((p) => p.featured).slice(0, 2);
-  const stackPreview = skills.filter((s) => s.title !== "PROFESSIONAL SKILLS").slice(0, 6);
-  const journeyTeaser = journey.slice(-3);
+  const hero = config.hero || {};
+  const sections = (config.sections || []).filter((s) => s.visible);
+  const s = content.settings;
 
   return (
     <div>
-      {homepage.showAnnouncement && homepage.announcement && (
+      {config.showAnnouncement && config.announcement && (
         <div className="border-b border-line bg-violet/10 px-5 py-2.5 text-center font-mono text-[10px] tracking-[0.2em] uppercase text-violet" data-testid="announcement-bar">
-          {homepage.announcement}
+          {config.announcement}
         </div>
       )}
 
-      {/* HERO */}
-      <section ref={heroRef} className="relative bg-grid overflow-hidden">
-        <div className="mx-auto max-w-[1440px] px-5 sm:px-8 pt-16 sm:pt-24 pb-16 sm:pb-20 grid lg:grid-cols-12 gap-12 items-center">
-          <motion.div className="lg:col-span-7" style={{ opacity: heroOpacity }}>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
-              className="flex items-center gap-3 mb-8">
-              <span className="font-mono text-[10px] tracking-[0.3em] text-violet">
-                {homepage.heroEyebrow || "FULL-STACK DEVELOPER / PHILIPPINES"}
-              </span>
-              <span className="h-px w-16 bg-violet/50" />
-            </motion.div>
-
-            <HeroTitle text={homepage.heroTitle} />
-
-            <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75, duration: 0.6 }}
-              className="mt-7 max-w-xl text-sm sm:text-base text-ink2 leading-relaxed">
-              {homepage.heroParagraph}
-            </motion.p>
-
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, duration: 0.6 }}
-              className="mt-6 flex items-center gap-2 font-mono text-[10px] tracking-[0.25em] uppercase" data-testid="hero-status">
-              <StatusDot color={settings.available ? "var(--green)" : "var(--amber)"} />
-              <span style={{ color: settings.available ? "var(--green)" : "var(--amber)" }}>
-                {settings.availability === "limited" ? "Limited availability" : settings.available ? "Available for select projects" : "Currently unavailable"}
-              </span>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.0, duration: 0.6 }}
-              className="mt-9 flex flex-wrap items-center gap-4">
-              <Link to="/contact" data-testid="hero-cta-start"
-                className="group inline-flex h-12 items-center px-7 bg-violet font-mono text-[11px] tracking-[0.2em] uppercase font-semibold hover:opacity-90 transition-opacity"
-                style={{ color: "var(--bg)" }}>
-                <SwapText label={homepage.primaryCta || "Start a Project →"} alt="Initialize Inquiry →" />
-              </Link>
-              <Link to="/work" data-testid="hero-cta-work"
-                className="group inline-flex h-12 items-center px-7 border border-line font-mono text-[11px] tracking-[0.2em] uppercase text-ink hover:border-violet hover:text-violet transition-colors">
-                <SwapText label={homepage.secondaryCta || "Explore My Work"} alt="Open /Project Archive" />
-              </Link>
-              <a href={`${process.env.REACT_APP_BACKEND_URL}/api/resume.pdf`} data-testid="hero-cta-cv"
-                className="font-mono text-[11px] tracking-[0.2em] uppercase text-ink3 hover:text-violet transition-colors">
-                Download CV ↓
-              </a>
-            </motion.div>
-          </motion.div>
-
-          <motion.div className="lg:col-span-5" style={{ y: panelY }}
-            initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.55, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
-            <SystemProfile projectCount={projects.length || 5} />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* QUICK METRICS */}
-      <section className="border-y border-line">
-        <div className="mx-auto max-w-[1440px] grid grid-cols-2 lg:grid-cols-4">
-          {[
-            { k: "SYS.STATUS", v: settings.available ? "ONLINE" : "BUSY", c: "var(--green)" },
-            { k: "DEPLOYED SYSTEMS", v: String(projects.length || 0).padStart(2, "0"), c: "var(--violet)" },
-            { k: "SERVICE MODULES", v: String(services.length || 0).padStart(2, "0"), c: "var(--cyan)" },
-            { k: "EDUCATION", v: "BS IT · CLSU", c: "var(--amber)" },
-          ].map((m, i) => (
-            <Reveal key={m.k} delay={i * 0.06}
-              className={`px-5 sm:px-8 py-7 border-line ${i > 0 ? "border-l" : ""} ${i > 1 ? "max-lg:border-t max-lg:border-l-0" : ""} ${i % 2 === 1 ? "max-lg:border-l" : ""}`}>
-              <TechLabel className="block mb-2">{m.k}</TechLabel>
-              <span className="font-mono text-xl sm:text-2xl font-bold tabular-nums" style={{ color: m.c }}>{m.v}</span>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      <Marquee items={MARQUEE_ITEMS} />
-
-      {/* SELECTED WORK */}
-      {show("selectedWork") && (
-        <section className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
-          <SectionHead num="02" title="SELECTED WORK"
-            sub="Real systems, shipped for real use. Numbered records from the project archive."
-            right={
-              <Link to="/work" data-testid="home-all-work"
-                className="group font-mono text-[10px] tracking-[0.2em] uppercase text-ink2 hover:text-violet transition-colors whitespace-nowrap">
-                <SwapText label="Full Archive →" alt="Open /Work →" />
-              </Link>
-            } />
-          <div className="grid lg:grid-cols-3 gap-5">
-            {shown.map((p, i) => <ProjectRecord key={p.id} project={p} index={i} />)}
-          </div>
-          {loading && <p className="font-mono text-xs text-ink3 mt-6 animate-blink">LOADING PROJECT RECORDS…</p>}
-        </section>
-      )}
-
-      {/* WHAT I BUILD */}
-      {show("whatIBuild") && (
-        <section className="border-y border-line bg-canvas2/40">
-          <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
-            <SectionHead num="03" title="WHAT I BUILD" />
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line">
-              {WHAT_I_BUILD.map((w, i) => (
-                <Reveal key={w.num} delay={i * 0.07} className="bg-card p-7 group hover:bg-canvas2/60 transition-colors">
-                  <span className="font-mono text-[10px] tracking-[0.3em] text-violet">{w.num}</span>
-                  <h3 className="mt-4 font-display text-lg font-bold tracking-tight text-ink group-hover:text-violet transition-colors">{w.title}</h3>
-                  <p className="mt-3 text-sm text-ink2 leading-relaxed">{w.desc}</p>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* SERVICES PREVIEW */}
-      {show("services") && (
-        <section className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
-          <SectionHead num="04" title={`SERVICES / ${String(services.length || 0).padStart(2, "0")}`}
-            sub="Service systems. Each one a stack of specialized capabilities." />
-          <div className="border-t border-line">
-            {services.map((s, i) => (
-              <Reveal key={s.id} delay={i * 0.04}>
-                <Link to="/services" data-testid={`home-service-${s.id}`}
-                  className="group flex items-center gap-4 sm:gap-8 py-5 border-b border-line hover:bg-canvas2/50 transition-colors px-2 sm:px-4">
-                  <span className="font-mono text-[11px] text-violet tracking-[0.2em] w-8 shrink-0">{s.num}</span>
-                  <span className="font-display text-base sm:text-xl font-bold tracking-tight text-ink group-hover:text-violet transition-colors flex-1 min-w-0 truncate">
-                    {s.title}
-                  </span>
-                  <span className="hidden md:block font-mono text-[9px] tracking-[0.15em] text-ink3 uppercase">
-                    {(s.capabilities || []).length} CAPABILITIES
-                  </span>
-                  <span className="font-mono text-xs text-ink3 group-hover:text-violet group-hover:translate-x-1 transition-all">→</span>
-                </Link>
-              </Reveal>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* STACK PREVIEW */}
-      {show("stack") && stackPreview.length > 0 && (
-        <section className="border-y border-line bg-canvas2/40">
-          <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
-            <SectionHead num="05" title="TECHNICAL STACK" sub="No fake percentages. Levels labeled honestly." />
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {stackPreview.map((cat, i) => (
-                <Reveal key={cat.id} delay={i * 0.05} className="panel p-6">
-                  <TechLabel className="block mb-4 text-violet">{cat.title}</TechLabel>
-                  <ul className="space-y-2.5">
-                    {(cat.items || []).slice(0, 5).map((item) => (
-                      <li key={item.name} className="flex items-center justify-between gap-3">
-                        <span className="font-mono text-xs text-ink">{item.name}</span>
-                        <LevelTag level={item.level} />
-                      </li>
-                    ))}
-                  </ul>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* PROCESS PIPELINE */}
-      {show("process") && (
-        <section className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
-          <SectionHead num="06" title="DEVELOPMENT PROCESS" sub="Every project runs the same pipeline. No skipped stages." />
-          <div className="grid md:grid-cols-3 xl:grid-cols-6 gap-px bg-line border border-line">
-            {PROCESS.map((step, i) => (
-              <Reveal key={step.num} delay={i * 0.06} className="bg-card p-6 relative group hover:bg-canvas2/60 transition-colors">
-                <div className="flex items-center justify-between mb-5">
-                  <span className="font-mono text-xl font-bold text-violet">{step.num}</span>
-                  {i < PROCESS.length - 1 && <span className="font-mono text-ink3 text-xs max-xl:hidden">→</span>}
-                </div>
-                <h3 className="font-display text-sm font-bold tracking-wide text-ink mb-4">{step.title}</h3>
-                <ul className="space-y-1.5">
-                  {step.items.map((it) => (
-                    <li key={it} className="font-mono text-[10px] tracking-[0.08em] text-ink3 uppercase">· {it}</li>
-                  ))}
-                </ul>
-              </Reveal>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* JOURNEY TEASER */}
-      {show("journey") && journeyTeaser.length > 0 && (
-        <section className="border-y border-line bg-canvas2/40">
-          <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28 grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <SectionHead num="07" title="JOURNEY.LOG" sub="Commit history of a developer career — initialized 2023, still pushing." />
-              <Link to="/journey" data-testid="home-journey-cta"
-                className="group inline-flex h-11 items-center px-6 border border-line font-mono text-[11px] tracking-[0.2em] uppercase text-ink hover:border-violet hover:text-violet transition-colors">
-                <SwapText label="View Full Log →" alt="Open /Journey →" />
-              </Link>
-            </div>
-            <div className="panel p-6 font-mono text-xs space-y-3">
-              <div className="text-ink3 text-[10px] tracking-[0.25em] mb-4">$ git log --career</div>
-              {journeyTeaser.map((j, i) => (
-                <Reveal key={j.id} delay={i * 0.08} className="flex gap-4">
-                  <span className="text-violet shrink-0">{j.code}</span>
-                  <div className="min-w-0">
-                    <span className="text-ink">{j.title}</span>
-                    <span className="text-ink3 ml-2">({j.year})</span>
-                  </div>
-                </Reveal>
-              ))}
-              <div className="text-grn text-[10px] tracking-[0.2em] pt-2">→ HEAD is now at BUILDING</div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* PRICING PREVIEW */}
-      {show("pricing") && (
-        <section className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
-          <SectionHead num="08" title="PRICING"
-            sub="Starting points, not traps. Final pricing depends on scope, integrations, complexity, and timeline."
-            right={
-              <Link to="/pricing" data-testid="home-pricing-link"
-                className="group font-mono text-[10px] tracking-[0.2em] uppercase text-ink2 hover:text-violet transition-colors whitespace-nowrap">
-                <SwapText label="All Packages →" alt="Open /Pricing →" />
-              </Link>
-            } />
-          <div className="grid sm:grid-cols-2 gap-5">
-            {(pricingPreview.length ? pricingPreview : pricing.slice(0, 2)).map((p, i) => (
-              <Reveal key={p.id} delay={i * 0.08} className="panel panel-hover p-7">
-                <TechLabel className="block mb-3">{p.model}</TechLabel>
-                <div className="font-mono text-3xl font-bold text-violet">{p.price}</div>
-                <h3 className="mt-3 font-display text-lg font-bold text-ink">{p.name}</h3>
-                <p className="mt-2 text-xs text-ink3 font-mono">{p.note}</p>
-              </Reveal>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* CONTACT CTA */}
-      {show("contactCta") && (
-        <section className="border-t border-line bg-grid">
-          <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-24 sm:py-32 text-center">
-            <Reveal>
-              <TechLabel className="block mb-6">TRANSMISSION / 09</TechLabel>
-              <h2 className="font-display font-extrabold tracking-tight leading-[0.95] text-5xl sm:text-7xl text-ink">
-                HAVE A SYSTEM<br /><span className="text-violet">IN MIND?</span>
-              </h2>
-              <p className="mt-6 max-w-xl mx-auto text-sm sm:text-base text-ink2 leading-relaxed">
-                Tell me what you're building, what problem you're solving, or what existing system needs improvement.
-              </p>
-              <div className="mt-10 flex flex-wrap justify-center gap-4">
-                <Link to="/contact" data-testid="home-contact-cta"
-                  className="group inline-flex h-12 items-center px-8 bg-violet font-mono text-[11px] tracking-[0.2em] uppercase font-semibold hover:opacity-90 transition-opacity"
+      {sections.find((x) => x.key === "hero") && (
+        <section ref={heroRef} className="relative bg-grid overflow-hidden">
+          <div className="mx-auto max-w-[1440px] px-5 sm:px-8 pt-16 sm:pt-24 pb-16 sm:pb-20 grid lg:grid-cols-12 gap-12 items-center">
+            <motion.div className="lg:col-span-7" style={{ opacity: heroOpacity }}>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
+                className="flex items-center gap-3 mb-8">
+                <span className="font-mono text-[10px] tracking-[0.3em] text-violet">{hero.eyebrow}</span>
+                <span className="h-px w-16 bg-violet/50" />
+              </motion.div>
+              <HeroTitle text={hero.title} />
+              <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75, duration: 0.6 }}
+                className="mt-7 max-w-xl text-sm sm:text-base text-ink2 leading-relaxed">
+                {hero.paragraph}
+              </motion.p>
+              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, duration: 0.6 }}
+                className="mt-6 flex items-center gap-2 font-mono text-[10px] tracking-[0.25em] uppercase" data-testid="hero-status">
+                <StatusDot color={s.available ? "var(--green)" : "var(--amber)"} />
+                <span style={{ color: s.available ? "var(--green)" : "var(--amber)" }}>
+                  {hero.availabilityLabel || (s.availability === "limited" ? "Limited availability" : s.available ? "Available for select projects" : "Currently unavailable")}
+                </span>
+              </motion.div>
+              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.0, duration: 0.6 }}
+                className="mt-9 flex flex-wrap items-center gap-4">
+                <Link to="/contact" data-testid="hero-cta-start"
+                  className="group inline-flex h-12 items-center px-7 bg-violet font-mono text-[11px] tracking-[0.2em] uppercase font-semibold hover:opacity-90 transition-opacity"
                   style={{ color: "var(--bg)" }}>
-                  <SwapText label="Start a Project →" alt="Open /Contact →" />
+                  <SwapText label={hero.primaryCta || "Start a Project →"} alt="Initialize Inquiry →" />
                 </Link>
-                <Link to="/pricing#estimator" data-testid="home-estimator-cta"
-                  className="inline-flex h-12 items-center px-8 border border-line font-mono text-[11px] tracking-[0.2em] uppercase text-ink hover:border-violet hover:text-violet transition-colors">
-                  Estimate Scope ₱
+                <Link to="/work" data-testid="hero-cta-work"
+                  className="group inline-flex h-12 items-center px-7 border border-line font-mono text-[11px] tracking-[0.2em] uppercase text-ink hover:border-violet hover:text-violet transition-colors">
+                  <SwapText label={hero.secondaryCta || "Explore My Work"} alt="Open /Project Archive" />
                 </Link>
-              </div>
-            </Reveal>
+                {hero.resumeCta !== "" && (
+                  <a href={`${BACKEND}/api/resume.pdf`} data-testid="hero-cta-cv"
+                    className="font-mono text-[11px] tracking-[0.2em] uppercase text-ink3 hover:text-violet transition-colors">
+                    {hero.resumeCta || "Download CV ↓"}
+                  </a>
+                )}
+              </motion.div>
+            </motion.div>
+            <motion.div className="lg:col-span-5" style={{ y: panelY }}
+              initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.55, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
+              <SystemProfile cfg={config.systemProfile || {}} content={content} />
+            </motion.div>
           </div>
         </section>
       )}
+
+      {sections.filter((x) => x.key !== "hero").map((sec, i) => {
+        const Comp = SECTION_RENDERERS[sec.key];
+        if (!Comp) return null;
+        return (
+          <div key={sec.key}>
+            <Comp cfg={config[sec.key] || {}} content={content} />
+            {sec.key === "metrics" && <Marquee items={MARQUEE_ITEMS} />}
+          </div>
+        );
+      })}
     </div>
   );
+}
+
+export default function Home() {
+  const content = useContent();
+  useSeo(null);
+  if (content.loading) {
+    return <div className="min-h-[60vh] grid place-items-center font-mono text-xs text-ink3 animate-blink">LOADING SYSTEM…</div>;
+  }
+  return <HomeRenderer config={content.homepage} content={content} />;
 }

@@ -18,6 +18,7 @@ import Resume from "@/pages/Resume";
 import Contact from "@/pages/Contact";
 import NotFound from "@/pages/NotFound";
 import AboutPreview from "@/pages/AboutPreview";
+import HomePreview from "@/pages/HomePreview";
 import AdminApp from "@/admin/AdminApp";
 
 function App() {
@@ -57,6 +58,7 @@ function App() {
                 <Route path="*" element={<NotFound />} />
               </Route>
               <Route path="/about-preview/:token" element={<AboutPreview />} />
+              <Route path="/home-preview/:token" element={<HomePreview />} />
               <Route path="/admin/*" element={<AdminApp />} />
             </Routes>
           </BrowserRouter>

@@ -36,9 +36,11 @@ export const SwapText = ({ label, alt, className = "" }) => (
 
 const LEVEL_STYLE = {
   CORE: { color: "var(--violet)", border: "var(--violet)" },
-  "WORKING KNOWLEDGE": { color: "var(--cyan)", border: "var(--cyan)" },
-  EXPERIENCE: { color: "var(--amber)", border: "var(--amber)" },
+  PROFICIENT: { color: "var(--cyan)", border: "var(--cyan)" },
+  "WORKING KNOWLEDGE": { color: "var(--amber)", border: "var(--amber)" },
+  FAMILIAR: { color: "var(--tx2)", border: "var(--line)" },
   LEARNING: { color: "var(--tx3)", border: "var(--line)" },
+  EXPERIENCE: { color: "var(--amber)", border: "var(--amber)" },
   AVAILABLE: { color: "var(--cyan)", border: "var(--line)" },
 };
 
@@ -52,6 +54,34 @@ export const LevelTag = ({ level }) => {
     >
       {level}
     </span>
+  );
+};
+
+const PROFICIENCY_SCALE = ["LEARNING", "FAMILIAR", "WORKING KNOWLEDGE", "PROFICIENT", "CORE"];
+
+export const StatusScale = ({ status }) => {
+  const idx = PROFICIENCY_SCALE.indexOf(status);
+  const active = LEVEL_STYLE[status] || LEVEL_STYLE.LEARNING;
+  return (
+    <div data-testid={`status-scale-${status.toLowerCase().replace(/[^a-z]+/g, "-")}`}>
+      <div className="flex gap-1" role="img" aria-label={`Proficiency: ${status}`}>
+        {PROFICIENCY_SCALE.map((s, i) => (
+          <span
+            key={s}
+            className="h-1 flex-1 transition-colors"
+            style={{ backgroundColor: i <= idx ? active.color : "var(--line)" }}
+          />
+        ))}
+      </div>
+      <div className="mt-1.5 flex items-center justify-between gap-2">
+        <span className="font-mono text-[8px] tracking-[0.15em] text-ink3 hidden xl:inline">
+          {PROFICIENCY_SCALE.slice(0, idx).length ? PROFICIENCY_SCALE[Math.max(0, idx - 1)] : "—"}
+        </span>
+        <span className="font-mono text-[9px] tracking-[0.15em] font-semibold" style={{ color: active.color }}>
+          {status}
+        </span>
+      </div>
+    </div>
   );
 };
 

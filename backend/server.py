@@ -32,6 +32,7 @@ from resume import ensure_generated_resume, get_resume_bytes, save_custom_resume
 from storage import get_object, init_storage
 import cms
 import about_cms
+import home_cms
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -99,6 +100,9 @@ async def bootstrap():
     for key in cms.SINGLETONS:
         doc = await db.singletons.find_one({"key": key}, {"_id": 0})
         singles[key] = doc["data"] if doc else {}
+
+    published_home = await home_cms.get_published()
+    singles["homepage"] = published_home["data"]
 
     profile = singles.get("profile", {})
     site = singles.get("site", {})
@@ -215,6 +219,15 @@ async def about_preview_data(token: str):
         "experienceSince": 2025,
     }
     return {"profile": profile, "stats": stats}
+
+
+@api.get("/homepage/preview-data/{token}")
+async def homepage_preview_data(token: str):
+    rec = await db.about_preview_tokens.find_one({"token": token, "kind": "homepage"})
+    if not rec or datetime.fromisoformat(rec["expires_at"]) < datetime.now(timezone.utc):
+        raise HTTPException(status_code=404, detail="Preview link expired or invalid.")
+    draft = await home_cms.get_draft()
+    return {"homepage": draft["data"]}
 
 
 # ---------- auth ----------
@@ -386,6 +399,7 @@ async def shutdown():
 
 api.include_router(cms.router, prefix="/admin")
 api.include_router(about_cms.router, prefix="/admin/about")
+api.include_router(home_cms.router, prefix="/admin/homepage-config")
 app.include_router(api)
 app.add_middleware(
     CORSMiddleware,

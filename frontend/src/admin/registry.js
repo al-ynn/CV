@@ -158,7 +158,7 @@ export const COLLECTION_SCHEMAS = {
       { key: "code", label: "Commit Code (e.g. a3f9c21 or HEAD)", type: "text" },
       { key: "title", label: "Title (e.g. FULL_STACK_MODE = TRUE)", type: "text", required: true },
       { key: "desc", label: "Description", type: "textarea", rows: 2 },
-      { key: "milestoneType", label: "Milestone Type", type: "select", options: ["education", "work", "release", "current"] },
+      { key: "milestoneType", label: "Milestone Type", type: "select", options: ["education", "work", "release", "current", "target"] },
       { key: "relatedProject", label: "Related Project Slug (optional)", type: "text" },
       STATUS_SELECT, ORDER_FIELD,
     ],
