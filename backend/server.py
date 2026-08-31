@@ -31,6 +31,7 @@ from seed_data import (
 from resume import ensure_generated_resume, get_resume_bytes, save_custom_resume
 from storage import get_object, init_storage
 import cms
+import about_cms
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -183,6 +184,39 @@ async def sitemap(request: Request):
     return Response(content=xml, media_type="application/xml")
 
 
+# ---------- about (public) ----------
+
+@api.get("/content/about")
+async def public_about():
+    profile = await db.about_profiles.find_one({"status": "published"}, {"_id": 0})
+    stats = {
+        "projects": await db.projects.count_documents({"status": "published", "archived": {"$ne": True}}),
+        "technologies": await db.technologies.count_documents({"status": "published", "archived": {"$ne": True}}),
+        "certifications": await db.certifications.count_documents({"status": "published", "archived": {"$ne": True}}),
+        "services": await db.services.count_documents({"status": "published", "archived": {"$ne": True}}),
+        "experienceSince": 2025,
+    }
+    return {"profile": profile, "stats": stats}
+
+
+@api.get("/about/preview-data/{token}")
+async def about_preview_data(token: str):
+    rec = await db.about_preview_tokens.find_one({"token": token})
+    if not rec or datetime.fromisoformat(rec["expires_at"]) < datetime.now(timezone.utc):
+        raise HTTPException(status_code=404, detail="Preview link expired or invalid.")
+    profile = await db.about_profiles.find_one({"id": rec["profile_id"]}, {"_id": 0})
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    stats = {
+        "projects": await db.projects.count_documents({"status": "published", "archived": {"$ne": True}}),
+        "technologies": await db.technologies.count_documents({"status": "published", "archived": {"$ne": True}}),
+        "certifications": await db.certifications.count_documents({"status": "published", "archived": {"$ne": True}}),
+        "services": await db.services.count_documents({"status": "published", "archived": {"$ne": True}}),
+        "experienceSince": 2025,
+    }
+    return {"profile": profile, "stats": stats}
+
+
 # ---------- auth ----------
 
 @api.post("/auth/login")
@@ -323,6 +357,13 @@ async def seed_content():
     for name in cms.PUBLISHABLE:
         await db[name].update_many({"status": {"$exists": False}}, {"$set": {"status": "published"}})
         await db[name].update_many({"archived": {"$exists": False}}, {"$set": {"archived": False}})
+    # seed default About profile if none exists
+    if await db.about_profiles.count_documents({}) == 0:
+        doc = about_cms.default_profile(name="Professional About 2026", template=4)
+        doc["status"] = "published"
+        doc["published_at"] = doc["created_at"]
+        await db.about_profiles.insert_one(doc)
+    await db.about_preview_tokens.create_index("token")
 
 
 @app.on_event("startup")
@@ -344,6 +385,7 @@ async def shutdown():
 
 
 api.include_router(cms.router, prefix="/admin")
+api.include_router(about_cms.router, prefix="/admin/about")
 app.include_router(api)
 app.add_middleware(
     CORSMiddleware,

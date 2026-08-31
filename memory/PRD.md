@@ -20,7 +20,19 @@ aesthetic + polished light mode. Concept: "a résumé encoded into a software in
 - Every publishable record: status (draft/published/hidden), archived (soft delete),
   order, created_at, updated_at. Public API only returns published + non-archived.
 
-## Implemented (2026-08-24 v1, rebuilt + CMS 2026-08-31 v2)
+## Implemented (2026-08-24 v1, rebuilt + CMS 2026-08-31 v2, About CMS 2026-08-31 v3)
+- About Page Builder (v3): about_profiles collection with versions (draft/published/
+  archived/trash), one-live-publish with automatic demote of the previous version,
+  30-day trash retention with auto-purge and restore, duplicate, revision history
+  (restore creates a draft), secure 2h preview tokens (/about-preview/:token),
+  5 templates (Profile / Dual Frame / Story / System Profile / Editorial Journey)
+  sharing one section library, photo management with roles + focal-point picker
+  (object-position, originals untouched), section manager (show/hide/reorder) +
+  custom section builder (text/quote/cards/timeline/gallery/cta), dynamic stats
+  computed from real DB counts, per-profile SEO fields, autosave drafts (20s) +
+  unsaved-changes guard, device preview modal (desktop/tablet/mobile iframe)
+- Rewritten professional story content (athlete → shift → SoilTrack → working
+  student → senior target) seeded as "Professional About 2026" (published, T04)
 - Public site: Home (CMS-driven hero, section visibility toggles, announcement bar),
   About (bio/focus/work-type from CMS), Work (filters + URL state), Case studies
   (12 editable sections, links, cover image, disclosure levels), Services (CMS panels),

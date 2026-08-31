@@ -88,7 +88,7 @@ export default function Dashboard({ user }) {
       <div className="mt-8 flex flex-wrap gap-2">
         {[
           ["+ Add Project", "/admin/projects"], ["+ Add Service", "/admin/services"], ["+ Add Certification", "/admin/certifications"],
-          ["Update Pricing", "/admin/pricing"], ["Edit Homepage", "/admin/homepage"], ["Upload Resume", "/admin/resume"],
+          ["Edit About", "/admin/about"], ["Update Pricing", "/admin/pricing"], ["Edit Homepage", "/admin/homepage"], ["Upload Resume", "/admin/resume"],
         ].map(([label, to]) => (
           <Link key={to} to={to} data-testid={`quick-${label.toLowerCase().replace(/[^a-z]+/g, "-")}`}
             className="h-9 px-4 inline-flex items-center border border-line font-mono text-[10px] tracking-[0.15em] uppercase text-ink2 hover:border-violet hover:text-violet transition-colors">

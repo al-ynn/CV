@@ -10,6 +10,7 @@ import Dashboard from "./Dashboard";
 import InboxPage from "./InboxPage";
 import MediaPage from "./MediaPage";
 import { ResumePage, SecurityPage, ActivityPage, ExportPanel } from "./MiscPages";
+import AboutAdmin from "./AboutAdmin";
 import { Sun, Moon, Monitor, LogOut, ExternalLink, Menu, X } from "lucide-react";
 
 const NAV = [
@@ -47,6 +48,7 @@ const NAV = [
 
 function Section({ id, user }) {
   if (id === "dashboard") return <Dashboard user={user} />;
+  if (id === "about") return <AboutAdmin />;
   if (id === "messages") return <InboxPage />;
   if (id === "media") return <MediaPage />;
   if (id === "resume") return <ResumePage />;
@@ -54,7 +56,7 @@ function Section({ id, user }) {
   if (id === "activity") return <ActivityPage />;
   if (COLLECTION_SCHEMAS[id]) return <CollectionPage schema={COLLECTION_SCHEMAS[id]} name={id} key={id} />;
   const singletonKey = id === "settings" ? "site" : id;
-  if (SINGLETON_SCHEMAS[singletonKey]) {
+  if (SINGLETON_SCHEMAS[singletonKey] && singletonKey !== "about") {
     return (
       <>
         <SingletonPage schema={SINGLETON_SCHEMAS[singletonKey]} name={singletonKey} key={singletonKey} />
