@@ -2,8 +2,34 @@ import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useContent } from "../lib/content";
 import useSeo from "../lib/useSeo";
+import { peso } from "../data/content";
 import { SectionHead, TechLabel, Reveal } from "../components/system/bits";
 import Estimator from "../components/Estimator";
+
+const KIND_STYLE = { static: "var(--green)", dynamic: "var(--cyan)", system: "var(--violet)", design: "var(--amber)", support: "var(--pink)" };
+
+const PRICE_FACTORS = [
+  "PROJECT TYPE", "STATIC / DYNAMIC", "PAGES / SCREENS", "MODULES", "DATABASE",
+  "USER ROLES", "INTEGRATIONS", "UI / UX", "TIMELINE", "DOCUMENTATION",
+];
+
+const ARCH_EXPLAINER = [
+  {
+    title: "STATIC WEBSITE", code: "ARCH.STATIC", color: "var(--green)",
+    items: ["Informational content", "No user login", "No database-driven workflow", "Company / portfolio / landing sites"],
+    note: "Generally lower cost.",
+  },
+  {
+    title: "DYNAMIC WEBSITE", code: "ARCH.DYNAMIC", color: "var(--cyan)",
+    items: ["Database", "Login / accounts", "Content management", "Dashboards", "API integrations"],
+    note: "Higher cost — backend included.",
+  },
+  {
+    title: "WEB SYSTEM / APPLICATION", code: "ARCH.SYSTEM", color: "var(--violet)",
+    items: ["Multiple user roles", "Complex database", "Admin modules", "Reporting", "Workflow management", "Audit logs"],
+    note: "Priced by module and workflow complexity.",
+  },
+];
 
 export default function Pricing() {
   const { pricing, estimator, loading } = useContent();
@@ -16,65 +42,126 @@ export default function Pricing() {
     }
   }, [hash]);
 
-  const disclaimer = estimator.disclaimer ||
-    "Every project is scoped individually. Small budgets are welcome — scope adjusts, quality doesn't.";
+  const est = estimator || {};
 
   return (
     <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-16 sm:py-24">
       <SectionHead num="04 /" title="PRICING"
-        sub="Transparent starting points in Philippine Peso. Final pricing depends on scope, integrations, complexity, timeline, and technical requirements." />
+        sub={est.philosophyBody || "Final pricing depends on scope, integrations, complexity, timeline, and technical requirements."} />
 
-      <div className="panel px-5 py-3.5 mb-10 border-l-2" style={{ borderLeftColor: "var(--amber)" }}>
-        <p className="font-mono text-[10px] tracking-[0.1em] uppercase text-ink3 leading-relaxed">
-          <span style={{ color: "var(--amber)" }}>NOTE //</span> {disclaimer}
+      {/* 01 philosophy */}
+      <Reveal className="panel p-7 sm:p-10 mb-16 border-l-2 bg-grid" style={{ borderLeftColor: "var(--violet)" }}>
+        <TechLabel className="block mb-4">PRICING.PHILOSOPHY</TechLabel>
+        <h2 className="font-display text-2xl sm:text-4xl font-extrabold tracking-tight text-ink leading-tight max-w-3xl">
+          {est.philosophyHeading || "PRICING BUILT AROUND THE SYSTEM, NOT A RANDOM PACKAGE."}
+        </h2>
+        <p className="mt-5 max-w-2xl text-sm text-ink2 leading-relaxed">
+          NO TWO SYSTEMS HAVE THE SAME SCOPE. Starting prices are references, not fixed packages.
+          Flexible development rates for startups, students, small businesses, organizations, and clients needing custom web solutions.
         </p>
-      </div>
+      </Reveal>
 
-      {loading ? (
-        <p className="font-mono text-xs text-ink3 animate-blink">LOADING PACKAGES…</p>
-      ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {pricing.map((p, i) => (
-            <Reveal key={p.id} delay={i * 0.05} className={`panel panel-hover p-6 flex flex-col ${p.featured ? "border-violet/60" : ""}`}>
-              {p.featured && (
-                <span className="font-mono text-[9px] tracking-[0.25em] text-violet mb-3">★ FREQUENTLY REQUESTED</span>
-              )}
-              <TechLabel className="block mb-2">{p.model}</TechLabel>
-              <div className="font-mono text-3xl font-bold text-ink" data-testid={`price-${p.id}`}>
-                {p.currency || "₱"}{String(p.price).replace(/^₱/, "")}
-              </div>
-              <h3 className="mt-3 font-display text-lg font-bold tracking-tight text-ink">{p.name}</h3>
-              <ul className="mt-4 space-y-1.5 flex-1">
-                {(p.includes || []).map((inc) => (
-                  <li key={inc} className="font-mono text-[10px] tracking-[0.05em] text-ink3 uppercase flex gap-2">
-                    <span className="text-grn">✓</span> {inc}
-                  </li>
-                ))}
-                {(p.excludes || []).map((exc) => (
-                  <li key={exc} className="font-mono text-[10px] tracking-[0.05em] text-ink3/60 uppercase flex gap-2">
-                    <span className="text-pk">✕</span> {exc}
-                  </li>
+      {/* 02 static/dynamic/system */}
+      <div className="mb-16">
+        <TechLabel className="block mb-5">02 / ARCHITECTURE DETERMINES COST</TechLabel>
+        <div className="grid md:grid-cols-3 gap-px bg-line border border-line eq-grid">
+          {ARCH_EXPLAINER.map((a, i) => (
+            <Reveal key={a.code} delay={i * 0.06} className="bg-card p-6 flex flex-col">
+              <span className="font-mono text-[9px] tracking-[0.25em]" style={{ color: a.color }}>{a.code}</span>
+              <h3 className="mt-2 font-display text-base font-bold text-ink">{a.title}</h3>
+              <ul className="mt-4 space-y-1.5">
+                {a.items.map((it) => (
+                  <li key={it} className="font-mono text-[10px] text-ink2 flex gap-2"><span style={{ color: a.color }}>·</span>{it}</li>
                 ))}
               </ul>
-              <p className="mt-4 text-[11px] text-ink3 leading-relaxed border-t border-line pt-3">{p.note}</p>
-              <Link to="/contact" data-testid={`pricing-cta-${p.id}`}
-                className="mt-5 inline-flex h-10 items-center justify-center border border-line font-mono text-[10px] tracking-[0.2em] uppercase text-ink hover:border-violet hover:text-violet transition-colors">
-                {p.cta} →
-              </Link>
+              <p className="mt-4 pt-3 border-t border-line font-mono text-[9px] tracking-[0.1em] uppercase text-ink3 mt-auto">{a.note}</p>
             </Reveal>
           ))}
         </div>
-      )}
+      </div>
 
-      <div id="estimator" className="mt-20 scroll-mt-24">
-        <SectionHead num="04.5 /" title="QUOTE ESTIMATOR" sub="Configure a rough scope. Get an initial range — not a binding quote." />
+      {/* 03 starting references */}
+      <div className="mb-16">
+        <TechLabel className="block mb-5">03 / STARTING PRICE REFERENCES — EDITABLE RANGES, NOT PACKAGES</TechLabel>
+        {loading ? (
+          <p className="font-mono text-xs text-ink3 animate-blink">LOADING…</p>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 eq-grid" data-testid="pricing-references">
+            {pricing.map((p, i) => (
+              <Reveal key={p.id} delay={i * 0.04} className="h-full">
+                <div className={`panel panel-hover p-5 eq-card ${p.featured ? "border-violet/60" : ""}`}>
+                  <span className="font-mono text-[8px] tracking-[0.25em] uppercase" style={{ color: KIND_STYLE[p.kind] || "var(--tx3)" }}>
+                    {(p.kind || "").toUpperCase()}
+                  </span>
+                  <h3 className="mt-2 font-display text-sm font-bold tracking-tight text-ink leading-snug">{p.name}</h3>
+                  <div className="mt-3 font-mono text-lg font-bold text-ink" data-testid={`range-${p.id}`}>
+                    {peso(p.min)} – {peso(p.max)}{p.plus ? "+" : ""}
+                  </div>
+                  <ul className="mt-3 space-y-1">
+                    {(p.typical || []).slice(0, 4).map((t) => (
+                      <li key={t} className="font-mono text-[9px] tracking-[0.05em] text-ink3 uppercase flex gap-1.5">
+                        <span className="text-grn">✓</span>{t}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="eq-card-foot mt-3 pt-3 border-t border-line font-mono text-[9px] text-ink3 leading-relaxed">{p.note}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 04 estimator */}
+      <div id="estimator" className="mb-16 scroll-mt-24">
+        <TechLabel className="block mb-5">04 / INTERACTIVE PROJECT ESTIMATOR</TechLabel>
         <Estimator />
       </div>
 
-      <div className="mt-20 panel p-8 sm:p-12 text-center bg-grid">
-        <TechLabel className="block mb-4">OUT OF SCOPE?</TechLabel>
+      {/* 05 what affects price */}
+      <div className="mb-16">
+        <TechLabel className="block mb-5">05 / WHAT AFFECTS THE PRICE?</TechLabel>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-px bg-line border border-line">
+          {PRICE_FACTORS.map((f, i) => (
+            <div key={f} className="bg-card px-4 py-4">
+              <span className="font-mono text-[10px] text-violet">{String(i + 1).padStart(2, "0")}</span>
+              <p className="mt-1 font-mono text-[9px] tracking-[0.15em] uppercase text-ink2">{f}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 06 scope comparison */}
+      <div className="mb-16">
+        <TechLabel className="block mb-5">06 / WHY PAGE COUNT ALONE DOESN'T SET THE PRICE</TechLabel>
+        <div className="grid md:grid-cols-2 gap-px bg-line border border-line">
+          <div className="bg-card p-6">
+            <span className="font-mono text-[9px] tracking-[0.25em] text-grn">PROJECT A / EXAMPLE</span>
+            <h3 className="mt-2 font-display text-lg font-bold text-ink">COMPANY WEBSITE</h3>
+            <div className="mt-4 space-y-1.5 font-mono text-[10px] text-ink2 uppercase">
+              <p>STATIC · 5 pages · contact form · responsive</p>
+            </div>
+            <p className="mt-4 pt-3 border-t border-line font-mono text-[10px] text-grn uppercase">Estimate: lower range</p>
+          </div>
+          <div className="bg-card p-6">
+            <span className="font-mono text-[9px] tracking-[0.25em] text-violet">PROJECT B / EXAMPLE</span>
+            <h3 className="mt-2 font-display text-lg font-bold text-ink">BUSINESS SYSTEM</h3>
+            <div className="mt-4 space-y-1.5 font-mono text-[10px] text-ink2 uppercase">
+              <p>DYNAMIC · 5 screens · authentication · admin · database · reports · 3 roles</p>
+            </div>
+            <p className="mt-4 pt-3 border-t border-line font-mono text-[10px] text-violet uppercase">Estimate: higher range</p>
+          </div>
+        </div>
+        <p className="mt-4 font-mono text-[10px] tracking-[0.08em] text-ink3 uppercase leading-relaxed">
+          Both may have five screens — their technical scope is completely different. That's exactly why pricing here is scope-based.
+        </p>
+      </div>
+
+      {/* 07 CTA */}
+      <div className="panel p-8 sm:p-12 text-center bg-grid">
+        <TechLabel className="block mb-4">CUSTOM SCOPE?</TechLabel>
         <h2 className="font-display text-2xl sm:text-4xl font-extrabold tracking-tight text-ink">
-          NEED SOMETHING OUTSIDE THESE PACKAGES?<br /><span className="text-violet">LET'S SCOPE IT.</span>
+          YOUR QUOTATION IS BASED ON<br /><span className="text-violet">WHAT THE PROJECT ACTUALLY NEEDS.</span>
         </h2>
         <Link to="/contact" data-testid="pricing-custom-quote"
           className="mt-7 inline-flex h-12 items-center px-8 bg-violet font-mono text-[11px] tracking-[0.2em] uppercase font-semibold hover:opacity-90 transition-opacity"

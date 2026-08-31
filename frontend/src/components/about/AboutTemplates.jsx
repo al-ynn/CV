@@ -3,7 +3,6 @@ import { TechLabel, StatusDot } from "../system/bits";
 import {
   AccentText, Photo, photosOf, photoByRole, renderSections, renderOnly,
   IntroSection, StorySection, SpecializationsSection, CareerGoalSection, StatsSection,
-  SportDevMapSection,
 } from "./AboutSections";
 
 const ChapterHead = ({ num, title, sub }) => (
@@ -160,11 +159,12 @@ function SystemProfileTemplate({ profile, ctx }) {
         <div className="grid lg:grid-cols-12">
           <div className={`${photos.length ? "lg:col-span-7 border-b lg:border-b-0 lg:border-r" : "lg:col-span-12"} p-6 sm:p-10 border-line`}>
             <div className="grid sm:grid-cols-2 gap-x-8 gap-y-6">
-              {readout.map(([k, v]) => (
-                <div key={k}>
+              {readout.map(([k, v], i) => (
+                <motion.div key={k} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 + i * 0.08, duration: 0.45 }}>
                   <TechLabel className="block mb-1.5">{k}</TechLabel>
                   <span className="font-mono text-xs sm:text-sm text-ink break-words">{v}</span>
-                </div>
+                </motion.div>
               ))}
             </div>
             <div className="mt-10">
@@ -184,7 +184,6 @@ function SystemProfileTemplate({ profile, ctx }) {
       </section>
 
       <section><StatsSection profile={profile} ctx={ctx} /></section>
-      <section><SportDevMapSection profile={profile} /></section>
       <section className="space-y-16">{renderSections(profile, ctx, { skip: ["intro", "stats"] })}</section>
       <p className="font-mono text-[9px] tracking-[0.25em] text-ink3 uppercase">
         // counts derived live from the portfolio database — {stats.projects ?? 0} projects, {stats.technologies ?? 0} technologies, {stats.certifications ?? 0} certifications

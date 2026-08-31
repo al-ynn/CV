@@ -12,45 +12,64 @@ import MediaPage from "./MediaPage";
 import { ResumePage, SecurityPage, ActivityPage, ExportPanel } from "./MiscPages";
 import AboutAdmin from "./AboutAdmin";
 import HomepageAdmin from "./HomepageAdmin";
-import { Sun, Moon, Monitor, LogOut, ExternalLink, Menu, X } from "lucide-react";
+import ServicesAdmin from "./ServicesAdmin";
+import PricingAdmin from "./PricingAdmin";
+import {
+  Sun, Moon, Monitor, LogOut, ExternalLink, Menu, X, LayoutDashboard, Globe,
+  FolderGit2, Briefcase, Inbox as InboxIcon, Image as ImageIcon, Settings2,
+  PanelLeftClose, PanelLeftOpen, ChevronRight,
+} from "lucide-react";
 
-const NAV = [
-  { group: "CONTROL CENTER", items: [
+const APPS = [
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, sections: [
     { id: "dashboard", label: "Overview" },
     { id: "activity", label: "Activity Log" },
-  ]},
-  { group: "CONTENT", items: [
+  ] },
+  { id: "website", label: "Website", icon: Globe, sections: [
     { id: "homepage", label: "Homepage" },
     { id: "about", label: "About" },
-    { id: "projects", label: "Projects" },
     { id: "services", label: "Services" },
     { id: "pricing", label: "Pricing" },
+    { id: "contact", label: "Contact & Social" },
+    { id: "profile", label: "Profile" },
+    { id: "seo", label: "SEO" },
+  ] },
+  { id: "portfolio", label: "Portfolio", icon: FolderGit2, sections: [
+    { id: "projects", label: "Projects" },
+    { id: "technologies", label: "Technologies" },
+    { id: "skills", label: "Skills" },
+  ] },
+  { id: "career", label: "Career", icon: Briefcase, sections: [
     { id: "experience", label: "Experience" },
     { id: "education", label: "Education" },
     { id: "certifications", label: "Certifications" },
-    { id: "skills", label: "Skills" },
-    { id: "technologies", label: "Technologies" },
-    { id: "journey", label: "Journey" },
-  ]},
-  { group: "INBOX", items: [{ id: "messages", label: "Contact Requests" }] },
-  { group: "ASSETS", items: [
-    { id: "media", label: "Media" },
-    { id: "resume", label: "Resume" },
-  ]},
-  { group: "CONFIGURATION", items: [
-    { id: "profile", label: "Profile" },
-    { id: "seo", label: "SEO" },
-    { id: "estimator", label: "Estimator" },
+    { id: "journey", label: "Journey Log" },
+  ] },
+  { id: "inbox", label: "Inbox", icon: InboxIcon, sections: [
+    { id: "messages", label: "Contact Requests" },
+  ] },
+  { id: "assets", label: "Assets", icon: ImageIcon, sections: [
+    { id: "media", label: "Media Library" },
+    { id: "resume", label: "Resume / CV" },
+  ] },
+  { id: "system", label: "System", icon: Settings2, sections: [
     { id: "settings", label: "Site Settings" },
     { id: "appearance", label: "Appearance" },
-  ]},
-  { group: "ACCOUNT", items: [{ id: "security", label: "Security" }] },
+    { id: "estimator", label: "Estimator" },
+    { id: "security", label: "Security" },
+  ] },
 ];
+
+const SECTION_TO_APP = Object.fromEntries(
+  APPS.flatMap((a) => a.sections.map((s) => [s.id, a.id]))
+);
 
 function Section({ id, user }) {
   if (id === "dashboard") return <Dashboard user={user} />;
   if (id === "about") return <AboutAdmin />;
   if (id === "homepage") return <HomepageAdmin />;
+  if (id === "services") return <ServicesAdmin />;
+  if (id === "pricing") return <PricingAdmin />;
   if (id === "messages") return <InboxPage />;
   if (id === "media") return <MediaPage />;
   if (id === "resume") return <ResumePage />;
@@ -175,12 +194,17 @@ function ResetPassword({ token, onDone }) {
 export default function AdminApp() {
   const [user, setUser] = useState(undefined);
   const [drawer, setDrawer] = useState(false);
+  const [rail, setRail] = useState(false); // primary sidebar collapsed to icons
+  const [subHidden, setSubHidden] = useState(false);
   const { theme, cycle } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
 
   const section = location.pathname.replace(/^\/admin\/?/, "") || "dashboard";
   const resetMatch = location.pathname.match(/^\/admin\/reset\/(.+)$/);
+  const appId = SECTION_TO_APP[section] || "dashboard";
+  const app = APPS.find((a) => a.id === appId);
+  const activeSection = app?.sections.find((s) => s.id === section);
 
   const check = useCallback(async () => {
     if (!localStorage.getItem("amurao_admin_token")) return setUser(null);
@@ -210,81 +234,184 @@ export default function AdminApp() {
 
   const ThemeIcon = theme === "light" ? Sun : theme === "system" ? Monitor : Moon;
 
-  const sidebar = (
+  const goSection = (id) => { setDrawer(false); navigate(`/admin/${id}`); };
+
+  // ----- primary sidebar (app rail) -----
+  const primaryNav = (collapsed) => (
     <>
-      <div className="px-5 py-5 border-b border-line">
-        <span className="font-mono text-xs font-bold tracking-[0.2em] text-ink">AMURAO.DEV</span>
-        <div className="font-mono text-[9px] tracking-[0.25em] text-violet mt-1 flex items-center gap-2">
-          <StatusDot /> ADMIN.CMS
-        </div>
+      <div className={`px-5 py-5 border-b border-line ${collapsed ? "px-0 text-center" : ""}`}>
+        {collapsed ? (
+          <span className="font-mono text-xs font-bold text-violet">A.</span>
+        ) : (
+          <>
+            <span className="font-mono text-xs font-bold tracking-[0.2em] text-ink">AMURAO.DEV</span>
+            <div className="font-mono text-[9px] tracking-[0.25em] text-violet mt-1 flex items-center gap-2">
+              <StatusDot /> ADMIN.CMS
+            </div>
+          </>
+        )}
       </div>
-      <nav className="flex-1 overflow-y-auto py-2" aria-label="Admin">
-        {NAV.map((g) => (
-          <div key={g.group} className="mb-2">
-            <div className="px-5 pt-3 pb-1.5 font-mono text-[8px] tracking-[0.3em] text-ink3">{g.group}</div>
-            {g.items.map((item) => (
-              <Link
-                key={item.id}
-                to={`/admin/${item.id}`}
-                data-testid={`admin-nav-${item.id}`}
-                onClick={() => setDrawer(false)}
-                className={`block px-5 py-2 font-mono text-[10px] tracking-[0.2em] uppercase border-l-2 transition-colors ${
-                  section === item.id ? "border-violet text-violet bg-violet/5" : "border-transparent text-ink3 hover:text-ink"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        ))}
+      <nav className="flex-1 overflow-y-auto py-3" aria-label="Admin apps">
+        {APPS.map((a) => {
+          const active = a.id === appId;
+          const Icon = a.icon;
+          return (
+            <button
+              key={a.id}
+              onClick={() => goSection(a.sections[0].id)}
+              data-testid={`admin-app-${a.id}`}
+              title={a.label}
+              className={`w-full flex items-center gap-3 px-5 py-3 font-mono text-[10px] tracking-[0.18em] uppercase border-l-2 transition-colors ${
+                collapsed ? "justify-center px-0" : ""
+              } ${active ? "border-violet text-violet bg-violet/10" : "border-transparent text-ink3 hover:text-ink hover:bg-canvas2/60"}`}
+            >
+              <Icon size={15} className="shrink-0" />
+              {!collapsed && <span>{a.label}</span>}
+            </button>
+          );
+        })}
       </nav>
-      <div className="flex flex-col gap-1 p-3 border-t border-line">
+      <div className={`flex flex-col gap-1 p-3 border-t border-line ${collapsed ? "items-center" : ""}`}>
+        <button onClick={() => setRail(!rail)} data-testid="admin-collapse-toggle"
+          aria-label={rail ? "Expand navigation" : "Collapse navigation"}
+          className={`hidden lg:flex items-center gap-2 px-3 py-2 font-mono text-[10px] tracking-[0.15em] uppercase text-ink3 hover:text-ink ${collapsed ? "justify-center px-0" : ""}`}>
+          {rail ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />} {!collapsed && (rail ? "Expand" : "Collapse Nav")}
+        </button>
         <button onClick={cycle} data-testid="admin-theme-toggle"
-          className="flex items-center gap-2 px-3 py-2 font-mono text-[10px] tracking-[0.15em] uppercase text-ink3 hover:text-ink text-left">
-          <ThemeIcon size={13} /> {theme}
+          className={`flex items-center gap-2 px-3 py-2 font-mono text-[10px] tracking-[0.15em] uppercase text-ink3 hover:text-ink ${collapsed ? "justify-center px-0" : ""}`}>
+          <ThemeIcon size={13} /> {!collapsed && theme}
         </button>
         <a href="/" data-testid="admin-view-site"
-          className="flex items-center gap-2 px-3 py-2 font-mono text-[10px] tracking-[0.15em] uppercase text-ink3 hover:text-ink">
-          <ExternalLink size={13} /> View Site
+          className={`flex items-center gap-2 px-3 py-2 font-mono text-[10px] tracking-[0.15em] uppercase text-ink3 hover:text-ink ${collapsed ? "justify-center px-0" : ""}`}>
+          <ExternalLink size={13} /> {!collapsed && "View Site"}
         </a>
         <button onClick={logout} data-testid="admin-logout"
-          className="flex items-center gap-2 px-3 py-2 font-mono text-[10px] tracking-[0.15em] uppercase text-pk hover:opacity-80 text-left">
-          <LogOut size={13} /> Logout
+          className={`flex items-center gap-2 px-3 py-2 font-mono text-[10px] tracking-[0.15em] uppercase text-pk hover:opacity-80 ${collapsed ? "justify-center px-0" : ""}`}>
+          <LogOut size={13} /> {!collapsed && "Logout"}
         </button>
       </div>
     </>
   );
 
+  // ----- contextual sub-sidebar -----
+  const subNav = (
+    <>
+      <div className="px-5 py-4 border-b border-line flex items-center justify-between gap-2">
+        <span className="font-mono text-[10px] tracking-[0.3em] text-violet uppercase">{app.label}</span>
+        <button onClick={() => setSubHidden(true)} aria-label="Hide section menu" data-testid="admin-sub-hide"
+          className="hidden lg:grid h-6 w-6 place-items-center text-ink3 hover:text-ink">
+          <X size={12} />
+        </button>
+      </div>
+      <nav className="flex-1 overflow-y-auto py-2" aria-label={`${app.label} sections`}>
+        {app.sections.map((s) => (
+          <Link
+            key={s.id}
+            to={`/admin/${s.id}`}
+            data-testid={`admin-nav-${s.id}`}
+            onClick={() => setDrawer(false)}
+            className={`flex items-center justify-between px-5 py-2.5 font-mono text-[10px] tracking-[0.18em] uppercase border-l-2 transition-colors ${
+              section === s.id
+                ? "border-violet text-ink bg-violet/10 font-semibold"
+                : "border-transparent text-ink3 hover:text-ink hover:bg-canvas2/60"
+            }`}
+          >
+            {s.label}
+            {section === s.id && <ChevronRight size={11} className="text-violet" />}
+          </Link>
+        ))}
+      </nav>
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-canvas flex flex-col lg:flex-row" data-testid="admin-dashboard">
-      <aside className="hidden lg:flex w-60 border-r border-line bg-canvas2/40 flex-col shrink-0 sticky top-0 h-screen">
-        {sidebar}
+      {/* desktop: primary rail + contextual sub-sidebar */}
+      <aside className={`hidden lg:flex ${rail ? "w-16" : "w-52"} border-r border-line bg-canvas2/40 flex-col shrink-0 sticky top-0 h-screen transition-[width] duration-200`}>
+        {primaryNav(rail)}
       </aside>
+      {subHidden ? (
+        <div className="hidden lg:flex flex-col border-r border-line bg-canvas2/20 shrink-0 sticky top-0 h-screen">
+          <button onClick={() => setSubHidden(false)} data-testid="admin-sub-show" aria-label="Show section menu"
+            className="m-2 h-8 w-8 grid place-items-center border border-line text-ink3 hover:text-violet hover:border-violet">
+            <ChevronRight size={13} />
+          </button>
+        </div>
+      ) : (
+        <aside className="hidden lg:flex w-52 border-r border-line bg-canvas2/20 flex-col shrink-0 sticky top-0 h-screen" data-testid="admin-subnav">
+          {subNav}
+        </aside>
+      )}
 
       {/* mobile top bar + drawer */}
       <div className="lg:hidden flex items-center justify-between h-14 px-4 border-b border-line bg-canvas2/40 sticky top-0 z-40">
         <span className="font-mono text-xs font-bold tracking-[0.2em]">AMURAO.DEV <span className="text-violet">CMS</span></span>
-        <button onClick={() => setDrawer(true)} aria-label="Open admin menu" data-testid="admin-drawer-toggle"
-          className="h-9 w-9 grid place-items-center border border-line">
-          <Menu size={16} />
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-ink3">{app.label} / {activeSection?.label}</span>
+          <button onClick={() => setDrawer(true)} aria-label="Open admin menu" data-testid="admin-drawer-toggle"
+            className="h-9 w-9 grid place-items-center border border-line">
+            <Menu size={16} />
+          </button>
+        </div>
       </div>
       {drawer && (
         <div className="lg:hidden fixed inset-0 z-50 flex" data-testid="admin-drawer">
           <div className="absolute inset-0 bg-canvas/80 backdrop-blur-sm" onClick={() => setDrawer(false)} />
-          <div className="relative w-72 max-w-[85vw] bg-canvas border-r border-line flex flex-col h-full">
-            <div className="flex justify-end p-3 border-b border-line">
+          <div className="relative w-80 max-w-[88vw] bg-canvas border-r border-line flex flex-col h-full overflow-y-auto">
+            <div className="flex justify-between items-center p-3 border-b border-line">
+              <span className="font-mono text-[10px] tracking-[0.25em] text-violet uppercase px-2">Admin.Apps</span>
               <button onClick={() => setDrawer(false)} aria-label="Close menu" className="h-9 w-9 grid place-items-center border border-line">
                 <X size={16} />
               </button>
             </div>
-            {sidebar}
+            {APPS.map((a) => {
+              const Icon = a.icon;
+              const active = a.id === appId;
+              return (
+                <div key={a.id} className="border-b border-line">
+                  <div className={`flex items-center gap-3 px-5 py-3 font-mono text-[10px] tracking-[0.18em] uppercase ${active ? "text-violet" : "text-ink3"}`}>
+                    <Icon size={14} /> {a.label}
+                  </div>
+                  <div className="pb-2">
+                    {a.sections.map((s) => (
+                      <button key={s.id} onClick={() => goSection(s.id)} data-testid={`admin-mnav-${s.id}`}
+                        className={`w-full text-left pl-12 pr-5 py-2 font-mono text-[10px] tracking-[0.15em] uppercase transition-colors ${
+                          section === s.id ? "text-violet bg-violet/10" : "text-ink2 hover:text-ink"
+                        }`}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            <div className="p-3 flex flex-col gap-1">
+              <button onClick={cycle} className="flex items-center gap-2 px-3 py-2 font-mono text-[10px] tracking-[0.15em] uppercase text-ink3">
+                <ThemeIcon size={13} /> {theme}
+              </button>
+              <a href="/" className="flex items-center gap-2 px-3 py-2 font-mono text-[10px] tracking-[0.15em] uppercase text-ink3">
+                <ExternalLink size={13} /> View Site
+              </a>
+              <button onClick={logout} className="flex items-center gap-2 px-3 py-2 font-mono text-[10px] tracking-[0.15em] uppercase text-pk">
+                <LogOut size={13} /> Logout
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      <main className="flex-1 min-w-0 p-5 sm:p-8 max-w-[1200px]">
-        <Section id={section} user={user} />
+      <main className="flex-1 min-w-0">
+        {/* breadcrumb bar */}
+        <div className="hidden lg:flex items-center gap-2 h-11 px-6 border-b border-line font-mono text-[9px] tracking-[0.2em] uppercase text-ink3" data-testid="admin-breadcrumbs">
+          <span>Admin</span>
+          <span className="text-line">/</span>
+          <span className="text-ink2">{app.label}</span>
+          <span className="text-line">/</span>
+          <span className="text-violet">{activeSection?.label || section}</span>
+        </div>
+        <div className="p-5 sm:p-8">
+          <Section id={section} user={user} />
+        </div>
       </main>
     </div>
   );

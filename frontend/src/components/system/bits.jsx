@@ -11,17 +11,27 @@ export const StatusDot = ({ color = "var(--green)", pulse = true, className = ""
   </span>
 );
 
-export const SectionHead = ({ num, title, sub, right }) => (
-  <div className="mb-12 sm:mb-16">
-    <div className="flex items-center gap-4 mb-5">
-      <span className="font-mono text-[11px] tracking-[0.3em] text-violet">{num}</span>
+export const SectionHead = ({ num, eyebrow, title, sub, right, bigNum, className = "" }) => (
+  <div className={`relative mb-12 sm:mb-16 ${className}`}>
+    {bigNum && (
+      <span
+        aria-hidden="true"
+        className="pointer-events-none select-none absolute -top-7 sm:-top-12 right-0 font-display font-extrabold leading-none text-[5.5rem] sm:text-[8rem] lg:text-[9.5rem] text-ink opacity-[0.045] dark:opacity-[0.06]"
+      >
+        {bigNum}
+      </span>
+    )}
+    <div className="relative flex items-center gap-4 mb-5">
+      <span className="font-mono text-[11px] tracking-[0.3em] text-violet uppercase whitespace-nowrap">
+        {[num, eyebrow].filter(Boolean).join(" / ") || "\u00A0"}
+      </span>
       <span className="h-px flex-1 bg-line" />
       {right}
     </div>
-    <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-none text-ink">
+    <h2 className="relative font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[0.95] text-ink whitespace-pre-line">
       {title}
     </h2>
-    {sub && <p className="mt-4 max-w-2xl text-sm sm:text-base text-ink2 leading-relaxed">{sub}</p>}
+    {sub && <p className="relative mt-5 max-w-2xl text-sm sm:text-base text-ink2 leading-relaxed">{sub}</p>}
   </div>
 );
 
@@ -40,13 +50,11 @@ const LEVEL_STYLE = {
   "WORKING KNOWLEDGE": { color: "var(--amber)", border: "var(--amber)" },
   FAMILIAR: { color: "var(--tx2)", border: "var(--line)" },
   LEARNING: { color: "var(--tx3)", border: "var(--line)" },
-  EXPERIENCE: { color: "var(--amber)", border: "var(--amber)" },
-  AVAILABLE: { color: "var(--cyan)", border: "var(--line)" },
 };
 
 export const LevelTag = ({ level }) => {
   if (!level) return null;
-  const s = LEVEL_STYLE[level] || LEVEL_STYLE.AVAILABLE;
+  const s = LEVEL_STYLE[level] || { color: "var(--cyan)", border: "var(--line)" };
   return (
     <span
       className="inline-block font-mono text-[9px] tracking-[0.18em] uppercase px-2 py-0.5 border whitespace-nowrap"

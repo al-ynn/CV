@@ -1,12 +1,15 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { useContent } from "../lib/content";
 import useSeo from "../lib/useSeo";
 import { MARQUEE_ITEMS } from "../data/content";
 import { SectionHead, TechLabel, StatusDot, SwapText, Reveal, LevelTag, StatusScale } from "../components/system/bits";
 import Marquee from "../components/system/Marquee";
 import ProjectRecord from "../components/ProjectRecord";
+import DirectChannels from "../components/ContactChannels";
+import RoadmapCanvas, { WhyScrum } from "../components/RoadmapCanvas";
+import { X } from "lucide-react";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
@@ -122,7 +125,7 @@ function MetricsStrip({ cfg, content }) {
   );
 }
 
-function FeaturedProjects({ cfg, content }) {
+function FeaturedProjects({ cfg, content, num }) {
   const byId = Object.fromEntries(content.projects.map((p) => [p.id, p]));
   let list = (cfg.ids || []).map((id) => byId[id]).filter(Boolean);
   if (!list.length) list = content.projects.filter((p) => p.featured);
@@ -130,36 +133,36 @@ function FeaturedProjects({ cfg, content }) {
   if (!list.length) return null;
   return (
     <section className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28" data-testid="home-featured">
-      <SectionHead num="" title={cfg.heading || "FEATURED PROJECTS"}
-        sub={cfg.label}
+      <SectionHead num={num} bigNum={num} eyebrow={cfg.label || "PROJECT_INDEX / FEATURED"} title={cfg.heading || "FEATURED\nPROJECTS"}
+        sub="A selection of systems and applications I've designed and developed."
         right={
           <Link to="/work" data-testid="home-all-work"
             className="group font-mono text-[10px] tracking-[0.2em] uppercase text-ink2 hover:text-violet transition-colors whitespace-nowrap">
             <SwapText label="Full Archive →" alt="Open /Work →" />
           </Link>
         } />
-      <div className="grid lg:grid-cols-3 gap-5">
+      <div className="grid lg:grid-cols-3 gap-5 eq-grid">
         {list.map((p, i) => (
-          <ProjectRecord key={p.id} project={p} index={i} large={i === 0} />
+          <ProjectRecord key={p.id} project={p} index={i} />
         ))}
       </div>
     </section>
   );
 }
 
-function WhatIBuild({ cfg }) {
+function WhatIBuild({ cfg, num }) {
   const items = (cfg.items || []).filter((i) => i.visible);
   if (!items.length) return null;
   return (
     <section className="border-y border-line bg-canvas2/40" data-testid="home-whatibuild">
       <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
-        <SectionHead num="" title={cfg.heading || "WHAT I BUILD"} />
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line">
+        <SectionHead num={num} bigNum={num} eyebrow="CAPABILITY_INDEX" title={cfg.heading || "WHAT I BUILD"} />
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line eq-grid">
           {items.map((w, i) => (
-            <Reveal key={w.title + i} delay={i * 0.07} className="bg-card p-7 group hover:bg-canvas2/60 transition-colors">
+            <Reveal key={w.title + i} delay={i * 0.07} className="bg-card p-7 group hover:bg-canvas2/60 transition-colors flex flex-col">
               <span className="font-mono text-[10px] tracking-[0.3em] text-violet">{w.techLabel || String(i + 1).padStart(2, "0")}</span>
               <h3 className="mt-4 font-display text-lg font-bold tracking-tight text-ink group-hover:text-violet transition-colors">{w.title}</h3>
-              <p className="mt-3 text-sm text-ink2 leading-relaxed">{w.desc}</p>
+              <p className="mt-3 text-sm text-ink2 leading-relaxed line-clamp-4">{w.desc}</p>
             </Reveal>
           ))}
         </div>
@@ -168,7 +171,7 @@ function WhatIBuild({ cfg }) {
   );
 }
 
-function ServicesPreview({ cfg, content }) {
+function ServicesPreview({ cfg, content, num }) {
   const byId = Object.fromEntries(content.services.map((s) => [s.id, s]));
   let list = (cfg.ids || []).map((id) => byId[id]).filter(Boolean);
   if (!list.length) list = content.services;
@@ -176,7 +179,7 @@ function ServicesPreview({ cfg, content }) {
   if (!list.length) return null;
   return (
     <section className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28" data-testid="home-services">
-      <SectionHead num="" title={`${cfg.heading || "SERVICES"} / ${String(content.services.length).padStart(2, "0")}`}
+      <SectionHead num={num} bigNum={num} eyebrow="SERVICE_INDEX" title={cfg.heading || "SERVICES"}
         sub="Service areas. Each one a stack of specialized capabilities." />
       <div className="border-t border-line">
         {list.map((s, i) => (
@@ -184,7 +187,7 @@ function ServicesPreview({ cfg, content }) {
             <Link to="/services" data-testid={`home-service-${s.id}`}
               className="group flex items-center gap-4 sm:gap-8 py-5 border-b border-line hover:bg-canvas2/50 transition-colors px-2 sm:px-4">
               <span className="font-mono text-[11px] text-violet tracking-[0.2em] w-8 shrink-0">{s.num}</span>
-              <span className="font-display text-base sm:text-xl font-bold tracking-tight text-ink group-hover:text-violet transition-colors flex-1 min-w-0 truncate">{s.title}</span>
+              <span className="font-display text-base sm:text-xl font-bold tracking-tight text-ink group-hover:text-violet group-hover:translate-x-1 transition-all flex-1 min-w-0 truncate">{s.title}</span>
               {cfg.showCount !== false && (
                 <span className="hidden md:block font-mono text-[9px] tracking-[0.15em] text-ink3 uppercase">
                   {(s.capabilities || []).length} SERVICES
@@ -205,141 +208,129 @@ function ServicesPreview({ cfg, content }) {
   );
 }
 
-function TechStack({ cfg, content }) {
+function TechDetailModal({ tech, content, onClose }) {
+  if (!tech) return null;
+  const usedIn = content.projects.filter((p) =>
+    (p.stack || []).some((s) => s.toLowerCase().includes((tech.name || "").toLowerCase()))
+  );
+  const related = content.technologies.filter((t) => t.category === tech.category && t.id !== tech.id).slice(0, 4);
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal="true" data-testid="tech-modal">
+      <div className="absolute inset-0 bg-canvas/85 backdrop-blur-sm" onClick={onClose} />
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        className="relative panel w-full max-w-lg max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line sticky top-0 bg-card z-10">
+          <span className="font-mono text-[10px] tracking-[0.25em] text-violet uppercase">TECH_STACK / {tech.category}</span>
+          <button onClick={onClose} aria-label="Close" data-testid="tech-modal-close" className="text-ink3 hover:text-ink"><X size={16} /></button>
+        </div>
+        <div className="p-6 sm:p-8">
+          <h3 className="font-display text-2xl font-extrabold tracking-tight text-ink">{tech.name}</h3>
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <div><TechLabel className="block mb-1.5">Status</TechLabel><LevelTag level={tech.level} /></div>
+            <div><TechLabel className="block mb-1.5">Category</TechLabel><span className="font-mono text-xs text-ink uppercase">{tech.category}</span></div>
+          </div>
+          {usedIn.length > 0 && (
+            <div className="mt-6">
+              <TechLabel className="block mb-3">Used In</TechLabel>
+              <div className="space-y-2">
+                {usedIn.map((p) => (
+                  <Link key={p.id} to={`/work/${p.slug}`} onClick={onClose}
+                    className="flex items-center justify-between panel panel-hover px-4 py-3 group">
+                    <span className="font-mono text-xs text-ink group-hover:text-violet transition-colors">{p.title}</span>
+                    <span className="font-mono text-[9px] text-ink3">CASE STUDY →</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+          {related.length > 0 && (
+            <div className="mt-6">
+              <TechLabel className="block mb-3">Related</TechLabel>
+              <div className="flex flex-wrap gap-1.5">
+                {related.map((t) => (
+                  <span key={t.id} className="font-mono text-[9px] tracking-[0.12em] uppercase px-2 py-1 border border-line text-ink2">{t.name}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {usedIn.length === 0 && related.length === 0 && (
+            <p className="mt-6 font-mono text-[10px] text-ink3 uppercase tracking-[0.12em]">Part of the active development toolkit.</p>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function TechStack({ cfg, content, num }) {
+  const [open, setOpen] = useState(null);
   const byId = Object.fromEntries(content.technologies.map((t) => [t.id, t]));
   let list = (cfg.ids || []).map((id) => byId[id]).filter(Boolean);
   if (!list.length) list = content.technologies;
   if (!list.length) return null;
   const byCat = {};
   list.forEach((t) => { (byCat[t.category || "Other"] = byCat[t.category || "Other"] || []).push(t); });
+  const maxRows = Math.max(...Object.values(byCat).map((items) => items.length));
   return (
     <section className="border-y border-line bg-canvas2/40" data-testid="home-techstack">
       <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
-        <SectionHead num="" title={cfg.heading || "TECHNICAL STACK"} sub={cfg.sub} />
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <SectionHead num={num} bigNum={num} eyebrow="STACK.INDEX" title={cfg.heading || "TECHNICAL\nSTACK"}
+          sub={cfg.sub || "Proficiency labeled honestly. Click a technology to see where it's proven."} />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 eq-grid">
           {Object.entries(byCat).map(([cat, items], i) => (
-            <Reveal key={cat} delay={i * 0.05} className="panel p-6">
-              <TechLabel className="block mb-4 text-violet">TECH_STACK / {cat.toUpperCase()}</TechLabel>
-              <ul className="space-y-2.5">
-                {items.map((t) => (
-                  <li key={t.id} className="flex items-center justify-between gap-3">
-                    <span className="font-mono text-xs text-ink">{t.name}</span>
-                    <LevelTag level={t.level} />
-                  </li>
-                ))}
-              </ul>
+            <Reveal key={cat} delay={i * 0.05} className="h-full">
+              <div className="eq-card panel p-6">
+                <TechLabel className="block mb-4 text-violet">TECH_STACK / {cat.toUpperCase()}</TechLabel>
+                <ul className="space-y-2.5" style={{ minHeight: `${maxRows * 2.125}rem` }}>
+                  {items.map((t) => (
+                    <li key={t.id}>
+                      <button
+                        type="button"
+                        onClick={() => setOpen(t)}
+                        data-testid={`tech-${(t.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+                        className="w-full flex items-center justify-between gap-3 px-2 py-1 -mx-2 hover:bg-canvas2/70 transition-colors group"
+                      >
+                        <span className="font-mono text-xs text-ink group-hover:text-violet transition-colors">{t.name}</span>
+                        <LevelTag level={t.level} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <p className="eq-card-foot pt-4 mt-4 border-t border-line font-mono text-[9px] tracking-[0.18em] uppercase text-ink3">
+                  {String(items.length).padStart(2, "0")} TECHNOLOG{items.length === 1 ? "Y" : "IES"}
+                </p>
+              </div>
             </Reveal>
           ))}
         </div>
       </div>
+      <AnimatePresence>
+        {open && <TechDetailModal tech={open} content={content} onClose={() => setOpen(null)} />}
+      </AnimatePresence>
     </section>
   );
 }
 
-function Roadmap({ cfg }) {
-  const stages = (cfg.stages || []).filter((s) => s.visible);
-  if (!stages.length) return null;
-  const loopFrom = cfg.loopFrom || "REVIEW";
-  const loopTo = cfg.loopTo || "BUILD";
-  const loopStart = stages.findIndex((s) => s.title.includes(loopFrom));
-  const loopEnd = stages.findIndex((s) => s.title.includes(loopTo));
-  const inLoop = (i) => loopStart >= 0 && loopEnd >= 0 && loopEnd < loopStart && i > loopStart && i <= stages.length - 1;
-  const isLoopBack = (i) => loopStart >= 0 && loopEnd >= 0 && i === loopStart;
+function Roadmap({ cfg, num }) {
+  const phases = (cfg.phases || []).filter((s) => s.visible !== false);
+  if (!phases.length) return null;
   return (
     <section className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28" data-testid="home-roadmap">
-      <SectionHead num="" title={cfg.heading || "SCRUM / PROTOTYPE ROADMAP"} sub={cfg.intro} />
-
-      {/* desktop: snake roadmap with iteration loop */}
-      <div className="hidden lg:block relative">
-        <div className="grid grid-cols-4 gap-5">
-          {stages.map((st, i) => (
-            <Reveal key={st.num + st.title} delay={i * 0.04}
-              className={`panel p-5 relative ${isLoopBack(i) ? "border-violet" : ""}`}>
-              <div className="flex items-center justify-between mb-3">
-                <span className="font-mono text-base font-bold text-violet">{st.num}</span>
-                <span className="font-mono text-[8px] tracking-[0.2em] uppercase text-ink3">{st.type}</span>
-              </div>
-              <h4 className="font-display text-sm font-bold tracking-wide text-ink mb-2">{st.title}</h4>
-              <p className="font-mono text-[9px] text-ink3 leading-relaxed">{st.desc}</p>
-              {isLoopBack(i) && (
-                <span className="absolute -top-2.5 left-4 bg-canvas px-2 font-mono text-[8px] tracking-[0.2em] text-violet">
-                  ↺ ITERATION POINT
-                </span>
-              )}
-              {i < stages.length - 1 && (
-                <span className="absolute top-1/2 -right-4 z-10 font-mono text-ink3 text-xs">→</span>
-              )}
-            </Reveal>
-          ))}
-        </div>
-        {loopStart >= 0 && loopEnd >= 0 && loopEnd < loopStart && (
-          <div className="mt-5 panel px-5 py-3 flex items-center justify-center gap-4 font-mono text-[10px] tracking-[0.2em] uppercase">
-            <span className="text-violet">↺ ITERATION LOOP</span>
-            <span className="text-ink2">{loopFrom}</span>
-            <span className="text-ink3">→</span>
-            <span className="text-ink2">REFINE</span>
-            <span className="text-ink3">→</span>
-            <span className="text-violet">{loopTo}</span>
-            <span className="text-ink3">// repeats until accepted, then deploy</span>
-          </div>
-        )}
-      </div>
-
-      {/* mobile: vertical roadmap */}
-      <div className="lg:hidden">
-        {stages.map((st, i) => (
-          <div key={st.num + st.title} className="flex gap-4">
-            <div className="flex flex-col items-center">
-              <span className={`w-2.5 h-2.5 rounded-full mt-1.5 ${isLoopBack(i) ? "bg-violet" : "bg-line"}`} style={isLoopBack(i) ? {} : { backgroundColor: "var(--violet)", opacity: 0.5 }} />
-              {i < stages.length - 1 && <span className="w-px flex-1 bg-line" />}
-            </div>
-            <div className="pb-7">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-mono text-[10px] text-violet">{st.num}</span>
-                <span className="font-display text-sm font-bold text-ink">{st.title}</span>
-                {isLoopBack(i) && <span className="font-mono text-[8px] tracking-[0.2em] text-violet border border-violet/40 px-1.5 py-0.5">↺ LOOPS TO {loopTo}</span>}
-              </div>
-              <p className="mt-1 font-mono text-[10px] text-ink3 leading-relaxed">{st.desc}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+      <SectionHead num={num} bigNum={num} eyebrow={cfg.scopeLabel || "DEVELOPMENT WORKFLOW"}
+        title={cfg.heading || "SCRUM / PROTOTYPE\nROADMAP"} />
+      <WhyScrum cfg={cfg} />
+      <RoadmapCanvas cfg={cfg} />
     </section>
   );
 }
 
-function JourneyPreview({ cfg, content }) {
-  const byId = Object.fromEntries((content.journey || []).map((j) => [j.id, j]));
-  let list;
-  if (cfg.mode === "selected") list = (cfg.ids || []).map((id) => byId[id]).filter(Boolean);
-  else if (cfg.mode === "all") list = content.journey;
-  else list = (content.journey || []).slice(-(cfg.max || 4));
-  if (!list.length) return null;
+function ContactChannelsSection({ cfg, content, num }) {
   return (
-    <section className="border-y border-line bg-canvas2/40" data-testid="home-journey">
-      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28 grid lg:grid-cols-2 gap-12 items-center">
-        <div>
-          <SectionHead num="" title={cfg.heading || "JOURNEY.LOG"} sub="Commit history of a developer career — progression, not pretense." />
-          <Link to="/journey" data-testid="home-journey-cta"
-            className="group inline-flex h-11 items-center px-6 border border-line font-mono text-[11px] tracking-[0.2em] uppercase text-ink hover:border-violet hover:text-violet transition-colors">
-            <SwapText label="View Full Log →" alt="Open /Journey →" />
-          </Link>
-        </div>
-        <div className="panel p-6 font-mono text-xs space-y-3">
-          <div className="text-ink3 text-[10px] tracking-[0.25em] mb-4">$ git log --career</div>
-          {list.map((j, i) => (
-            <Reveal key={j.id} delay={i * 0.08} className="flex gap-4">
-              <span className="text-violet shrink-0">{j.code}</span>
-              <div className="min-w-0">
-                <span className={j.milestoneType === "target" ? "text-amb" : j.milestoneType === "current" ? "text-grn" : "text-ink"}>
-                  {j.title}
-                </span>
-                <span className="text-ink3 ml-2">({j.year})</span>
-                {j.milestoneType === "target" && <span className="ml-2 text-[8px] tracking-[0.2em] text-amb border border-amb/40 px-1.5 py-0.5">TARGET</span>}
-              </div>
-            </Reveal>
-          ))}
-        </div>
+    <section className="border-t border-line bg-canvas2/40" data-testid="home-contact-channels">
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
+        <SectionHead num={num} bigNum={num} eyebrow="OPEN.CHANNELS" title={cfg.heading || "DIRECT\nCHANNELS"}
+          sub={cfg.sub || "No forms required. Reach me directly through any of these."} />
+        <DirectChannels settings={content.settings} testidPrefix="home-channel" />
       </div>
     </section>
   );
@@ -384,7 +375,7 @@ const SECTION_RENDERERS = {
   services: ServicesPreview,
   techStack: TechStack,
   roadmap: Roadmap,
-  journey: JourneyPreview,
+  contactChannels: ContactChannelsSection,
   finalCta: FinalCta,
 };
 
@@ -458,9 +449,10 @@ export function HomeRenderer({ config, content }) {
       {sections.filter((x) => x.key !== "hero").map((sec, i) => {
         const Comp = SECTION_RENDERERS[sec.key];
         if (!Comp) return null;
+        const num = String(i + 2).padStart(2, "0");
         return (
           <div key={sec.key}>
-            <Comp cfg={config[sec.key] || {}} content={content} />
+            <Comp cfg={config[sec.key] || {}} content={content} num={num} />
             {sec.key === "metrics" && <Marquee items={MARQUEE_ITEMS} />}
           </div>
         );

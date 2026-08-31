@@ -1,4 +1,6 @@
 import { Link } from "react-router-dom";
+import { useState, useRef } from "react";
+import { motion, useInView } from "framer-motion";
 import { Reveal, TechLabel, LevelTag, StatusDot } from "../system/bits";
 import { periodOf } from "../../data/content";
 
@@ -19,6 +21,7 @@ export const SECTION_LABELS = {
   careerGoal: "Career Goal", openTo: "Open To Opportunities", stats: "Statistics",
   currentFocus: "Current Focus", education: "Education", experience: "Work Experience",
   projects: "Projects Highlight", certifications: "Certifications",
+  storyTimeline: "Interactive Timeline", gallery: "Photo Gallery",
   resumeCta: "Resume CTA", contactCta: "Contact CTA",
 };
 
@@ -81,6 +84,7 @@ export function IntroSection({ profile }) {
 
 export function StorySection({ profile, compact = false }) {
   const s = profile.story || {};
+  const [openChapter, setOpenChapter] = useState(null);
   const chapters = [
     ["BEFORE THE CODE", s.beforeTheCode],
     ["THE SHIFT", s.theShift],
@@ -90,17 +94,35 @@ export function StorySection({ profile, compact = false }) {
     ["THE GOAL", s.theGoal],
   ].filter(([, body]) => body);
   return (
-    <div className={compact ? "space-y-8" : "space-y-12"}>
-      {chapters.map(([label, body], i) => (
-        <Reveal key={label}>
-          <div className="flex items-center gap-4 mb-4">
-            <span className="font-mono text-[11px] tracking-[0.3em] text-violet">{String(i + 1).padStart(2, "0")}</span>
-            <span className="h-px flex-1 bg-line" />
-            <TechLabel>{label}</TechLabel>
-          </div>
-          <p className="text-sm sm:text-base text-ink2 leading-relaxed sm:pl-10 whitespace-pre-line">{body}</p>
-        </Reveal>
-      ))}
+    <div className={compact ? "space-y-8" : "space-y-6"}>
+      {chapters.map(([label, body], i) => {
+        const isOpen = openChapter === label;
+        return (
+          <Reveal key={label}>
+            <button
+              type="button"
+              onClick={() => setOpenChapter(isOpen ? null : label)}
+              aria-expanded={isOpen}
+              data-testid={`story-chapter-${i}`}
+              className="w-full text-left group"
+            >
+              <div className="flex items-center gap-4 mb-3">
+                <span className={`font-mono text-[11px] tracking-[0.3em] transition-colors ${isOpen ? "text-violet" : "text-violet/70 group-hover:text-violet"}`}>
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span className="h-px flex-1 bg-line group-hover:bg-violet/40 transition-colors" />
+                <TechLabel className="group-hover:text-ink transition-colors">{label}</TechLabel>
+                <span className={`font-mono text-[9px] tracking-[0.15em] uppercase transition-colors ${isOpen ? "text-violet" : "text-ink3 group-hover:text-violet"}`}>
+                  {isOpen ? "— CLOSE" : "+ READ"}
+                </span>
+              </div>
+              <p className={`text-sm sm:text-base text-ink2 leading-relaxed sm:pl-10 whitespace-pre-line transition-all ${isOpen ? "" : "line-clamp-2"}`}>
+                {body}
+              </p>
+            </button>
+          </Reveal>
+        );
+      })}
     </div>
   );
 }
@@ -108,11 +130,35 @@ export function StorySection({ profile, compact = false }) {
 export function WorkingStudentSection({ profile }) {
   const w = profile.workingStudent || {};
   if (!w.heading && !w.body) return null;
+  const load = [
+    { tag: "STUDENT", value: "BS INFORMATION TECHNOLOGY", color: "var(--cyan)" },
+    { tag: "DEVELOPER", value: "FREELANCE / PROJECT-BASED", color: "var(--violet)" },
+    { tag: "LEARNING", value: "SYSTEMS / SOFTWARE", color: "var(--amber)" },
+  ];
   return (
-    <div className="panel p-7 sm:p-10 bg-grid">
-      <TechLabel className="block mb-4">WORKING_STUDENT.LOG</TechLabel>
-      <h3 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">{w.heading}</h3>
-      <p className="mt-5 max-w-2xl text-sm sm:text-base text-ink2 leading-relaxed whitespace-pre-line">{w.body}</p>
+    <div className="panel p-7 sm:p-10 bg-grid" data-testid="about-working-student">
+      <TechLabel className="block mb-6">CURRENT_LOAD</TechLabel>
+      <div className="flex flex-col lg:flex-row lg:items-stretch gap-3">
+        {load.map((item, i) => (
+          <div key={item.tag} className="flex items-center gap-3 flex-1">
+            <Reveal delay={i * 0.1} className="flex-1 border border-line bg-card px-5 py-4 hover:border-violet transition-colors">
+              <span className="font-mono text-[9px] tracking-[0.25em] uppercase" style={{ color: item.color }}>{item.tag}</span>
+              <p className="mt-1.5 font-mono text-xs text-ink font-semibold">{item.value}</p>
+            </Reveal>
+            <span className="font-mono text-xl text-ink3 shrink-0 max-lg:rotate-90 max-lg:mx-auto">+</span>
+          </div>
+        ))}
+        <div className="flex items-center gap-3 flex-[1.2]">
+          <span className="font-mono text-xl text-violet shrink-0 max-lg:rotate-90 max-lg:mx-auto">=</span>
+          <Reveal delay={0.35} className="flex-1 border border-violet/60 bg-violet/5 px-5 py-4">
+            <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-violet">OUTPUT</span>
+            <p className="mt-1.5 font-display text-base font-extrabold tracking-tight text-ink">
+              {w.heading || "BUILDING EXPERIENCE BEFORE GRADUATION"}
+            </p>
+          </Reveal>
+        </div>
+      </div>
+      {w.body && <p className="mt-6 max-w-2xl text-sm sm:text-base text-ink2 leading-relaxed whitespace-pre-line">{w.body}</p>}
     </div>
   );
 }
@@ -264,6 +310,27 @@ export function CareerGoalSection({ profile }) {
       </div>
       <h3 className="font-display text-2xl sm:text-4xl font-extrabold tracking-tight text-ink">{g.heading}</h3>
       <p className="mt-5 max-w-2xl text-sm sm:text-base text-ink2 leading-relaxed whitespace-pre-line">{g.body}</p>
+      <div className="mt-8 max-w-2xl" data-testid="career-progress">
+        <div className="flex justify-between font-mono text-[9px] tracking-[0.2em] uppercase mb-2">
+          <span className="text-grn flex items-center gap-1.5"><StatusDot color="var(--green)" pulse={false} /> NOW — BUILDING</span>
+          <span className="text-amb">TARGET — SENIOR</span>
+        </div>
+        <div className="relative h-1.5 bg-line">
+          <motion.span
+            className="absolute inset-y-0 left-0"
+            style={{ background: "linear-gradient(90deg, var(--green), var(--violet), var(--amber))" }}
+            initial={{ width: 0 }}
+            whileInView={{ width: "62%" }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1] }}
+          />
+        </div>
+        <div className="flex justify-between mt-2 font-mono text-[8px] tracking-[0.15em] uppercase text-ink3">
+          <span>junior / freelance</span>
+          <span>mid-level systems</span>
+          <span>senior full-stack & systems</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -457,19 +524,33 @@ export function ContactCtaSection({ profile }) {
 
 export function SportDevMapSection({ profile }) {
   const rows = profile.sportToDev || [];
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-60px" });
   if (!rows.length) return null;
   return (
-    <div>
-      <TechLabel className="block mb-5">SPORT → DEVELOPMENT</TechLabel>
+    <div ref={ref} data-testid="about-sportdev">
+      <TechLabel className="block mb-2">SPORT → DEVELOPMENT</TechLabel>
+      <p className="mb-6 max-w-xl text-sm text-ink2 leading-relaxed">
+        The discipline transferred directly. Same loop, different arena.
+      </p>
       <div className="panel">
-        <div className="grid grid-cols-2 font-mono text-[9px] tracking-[0.25em] uppercase text-ink3 border-b border-line">
-          <span className="px-5 py-2.5">SPORT</span>
-          <span className="px-5 py-2.5 border-l border-line">DEVELOPMENT</span>
+        <div className="grid grid-cols-[1fr_64px_1fr] font-mono text-[9px] tracking-[0.25em] uppercase text-ink3 border-b border-line">
+          <span className="px-5 py-2.5">Sport</span>
+          <span className="px-2 py-2.5 text-center border-l border-line">→</span>
+          <span className="px-5 py-2.5 border-l border-line">Development</span>
         </div>
-        {rows.map((r) => (
-          <div key={r.sport} className="grid grid-cols-2 border-b border-line last:border-0 font-mono text-xs">
-            <span className="px-5 py-3 text-ink2">{r.sport}</span>
-            <span className="px-5 py-3 border-l border-line text-violet">{r.dev}</span>
+        {rows.map((r, i) => (
+          <div key={r.sport} className="group grid grid-cols-[1fr_64px_1fr] border-b border-line last:border-0 font-mono text-xs hover:bg-canvas2/50 transition-colors">
+            <span className="px-5 py-3.5 text-ink2 group-hover:text-ink transition-colors">{r.sport}</span>
+            <span className="relative border-l border-line overflow-hidden" aria-hidden="true">
+              <motion.span
+                className="absolute inset-y-0 left-0 bg-violet/25 border-r border-violet"
+                initial={{ width: 0 }}
+                animate={inView ? { width: "100%" } : {}}
+                transition={{ duration: 0.5, delay: 0.15 + i * 0.09, ease: "easeOut" }}
+              />
+            </span>
+            <span className="px-5 py-3.5 border-l border-line text-violet">{r.dev}</span>
           </div>
         ))}
       </div>
@@ -477,6 +558,125 @@ export function SportDevMapSection({ profile }) {
   );
 }
 
+const MILESTONE_COLOR = {
+  education: "var(--cyan)", work: "var(--violet)", release: "var(--pink)",
+  current: "var(--green)", target: "var(--amber)",
+};
+
+export function StoryTimelineSection({ ctx }) {
+  const items = (ctx.journey || []);
+  const [open, setOpen] = useState(null);
+  if (!items.length) return null;
+  return (
+    <div data-testid="about-story-timeline">
+      <TechLabel className="block mb-2">TIMELINE.LOG</TechLabel>
+      <p className="mb-8 max-w-xl text-sm text-ink2 leading-relaxed">
+        The path so far — select a milestone to read the note behind it.
+      </p>
+      <div>
+        {items.map((j, i) => {
+          const color = MILESTONE_COLOR[j.milestoneType] || "var(--violet)";
+          const isOpen = open === j.id;
+          return (
+            <Reveal key={j.id} delay={i * 0.04} className="relative pl-10 pb-6 last:pb-0">
+              <span className="absolute left-[13px] top-7 bottom-0 w-px bg-line last:hidden" />
+              <span className="absolute left-0 top-1 grid place-items-center w-7 h-7 border bg-card transition-colors"
+                style={{ borderColor: isOpen ? color : "var(--line)" }}>
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+              </span>
+              <button
+                type="button"
+                onClick={() => setOpen(isOpen ? null : j.id)}
+                aria-expanded={isOpen}
+                data-testid={`timeline-node-${j.id}`}
+                className="w-full text-left group"
+              >
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span className="font-mono text-[10px] tracking-[0.25em]" style={{ color }}>{j.year}</span>
+                  {j.code && <span className="font-mono text-[9px] text-ink3">{j.code}</span>}
+                  <span className={`font-display text-base sm:text-lg font-extrabold tracking-tight transition-colors ${isOpen ? "" : "text-ink group-hover:text-violet"}`}
+                    style={isOpen ? { color } : {}}>
+                    {j.title}
+                  </span>
+                  {j.milestoneType === "target" && (
+                    <span className="font-mono text-[8px] tracking-[0.2em] text-amb border border-amb/40 px-1.5 py-0.5">TARGET</span>
+                  )}
+                  {j.milestoneType === "current" && (
+                    <span className="font-mono text-[8px] tracking-[0.2em] text-grn border border-grn/40 px-1.5 py-0.5">NOW</span>
+                  )}
+                </div>
+              </button>
+              <motion.div
+                initial={false}
+                animate={{ height: isOpen ? "auto" : 0, opacity: isOpen ? 1 : 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                {j.desc && (
+                  <p className="pt-2.5 pl-1 max-w-2xl text-sm text-ink2 leading-relaxed border-l-2 ml-1 pl-4 mt-2"
+                    style={{ borderLeftColor: color }}>
+                    {j.desc}
+                  </p>
+                )}
+              </motion.div>
+            </Reveal>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export function GallerySection({ profile }) {
+  const photos = photosOf(profile);
+  if (photos.length < 2) return null;
+  return (
+    <div data-testid="about-gallery">
+      <TechLabel className="block mb-2">FIELD_NOTES / GALLERY</TechLabel>
+      <p className="mb-8 max-w-xl text-sm text-ink2 leading-relaxed">Fragments from the process — court, desk, and everything between.</p>
+      {/* offset contact-sheet grid */}
+      <div className="hidden sm:grid grid-cols-4 gap-4">
+        {photos.slice(0, 8).map((p, i) => (
+          <div key={i} className={`group ${i % 4 === 1 ? "translate-y-8" : i % 4 === 3 ? "translate-y-4" : ""} ${i % 3 === 2 ? "col-span-1" : ""}`}>
+            <div className="panel overflow-hidden hover:border-violet transition-colors">
+              <div className={`${i % 2 === 0 ? "aspect-[4/5]" : "aspect-square"} overflow-hidden bg-canvas2`}>
+                <img
+                  src={p.url.startsWith("/") ? `${BACKEND}${p.url}` : p.url}
+                  alt={p.alt || p.caption || "Gallery photo"}
+                  loading="lazy"
+                  className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-[1.03] transition-all duration-500"
+                  style={{ objectPosition: `${p.focalX ?? 50}% ${p.focalY ?? 50}%` }}
+                />
+              </div>
+              <div className="px-3 py-2 border-t border-line flex items-center justify-between">
+                <span className="font-mono text-[8px] tracking-[0.2em] uppercase text-ink3 truncate">
+                  {p.caption || p.role || `FRAME_${String(i + 1).padStart(2, "0")}`}
+                </span>
+                <span className="font-mono text-[8px] text-violet opacity-0 group-hover:opacity-100 transition-opacity">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* mobile: horizontal contact sheet */}
+      <div className="sm:hidden flex gap-3 overflow-x-auto pb-3 -mx-5 px-5 snap-x">
+        {photos.slice(0, 8).map((p, i) => (
+          <div key={i} className="w-40 shrink-0 snap-start panel overflow-hidden">
+            <div className="aspect-[4/5] overflow-hidden bg-canvas2">
+              <img src={p.url.startsWith("/") ? `${BACKEND}${p.url}` : p.url} alt={p.alt || "Gallery photo"} loading="lazy"
+                className="w-full h-full object-cover" style={{ objectPosition: `${p.focalX ?? 50}% ${p.focalY ?? 50}%` }} />
+            </div>
+            <div className="px-2.5 py-1.5 border-t border-line font-mono text-[8px] tracking-[0.15em] uppercase text-ink3 truncate">
+              {p.caption || p.role || `FRAME_${i + 1}`}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 export function CustomSection({ section }) {
   if (!section.visible) return null;
   const items = section.items || [];
@@ -558,6 +758,8 @@ export const SECTION_COMPONENTS = {
   resumeCta: ResumeCtaSection,
   contactCta: ContactCtaSection,
   sportDevMap: SportDevMapSection,
+  storyTimeline: StoryTimelineSection,
+  gallery: GallerySection,
 };
 
 export function renderOnly(profile, ctx, keys) {

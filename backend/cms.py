@@ -14,7 +14,7 @@ PUBLISHABLE = [
     "certifications", "journey", "skills", "technologies",
 ]
 REVISIONED = {"projects", "pricing"}
-SINGLETONS = ["homepage", "about", "profile", "seo", "site", "estimator", "appearance"]
+SINGLETONS = ["homepage", "about", "profile", "seo", "site", "estimator", "appearance", "contact"]
 STATUSES = {"draft", "published", "hidden"}
 
 ALLOWED_MIME = {

@@ -65,6 +65,11 @@
     transition: border-color 0.3s ease, background-color 0.3s ease;
   }
   .panel-hover:hover { border-color: var(--violet); }
+  /* Equal-height card grids: every cell in the same group aligns */
+  .eq-grid { grid-auto-rows: 1fr; }
+  .eq-grid > * { min-width: 0; }
+  .eq-card { height: 100%; display: flex; flex-direction: column; }
+  .eq-card-foot { margin-top: auto; }
   .tech-label {
     font-family: "JetBrains Mono", monospace;
     font-size: 10px;

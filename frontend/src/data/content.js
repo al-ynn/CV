@@ -1,9 +1,10 @@
 export const NAV_LINKS = [
+  { to: "/", label: "Home", num: "00" },
   { to: "/about", label: "About", num: "01" },
   { to: "/work", label: "Work", num: "02" },
   { to: "/services", label: "Services", num: "03" },
   { to: "/pricing", label: "Pricing", num: "04" },
-  { to: "/journey", label: "Journey", num: "05" },
+  { to: "/experience", label: "Experience", num: "05" },
   { to: "/contact", label: "Contact", num: "06" },
 ];
 

@@ -22,7 +22,6 @@ export default function CommandPalette({ open, setOpen }) {
   const go = (to) => { setOpen(false); navigate(to); };
 
   const items = [
-    { label: "Go Home", action: () => go("/"), hint: "/" },
     ...NAV_LINKS.map((l) => ({ label: `View ${l.label}`, action: () => go(l.to), hint: l.to })),
     { label: "View Resume", action: () => go("/resume"), hint: "/resume" },
     {

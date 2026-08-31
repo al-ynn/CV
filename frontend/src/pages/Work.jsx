@@ -48,7 +48,7 @@ export default function Work() {
           <p className="font-mono text-xs text-ink2">0 RECORDS FOUND FOR "{active}"</p>
         </div>
       ) : (
-        <motion.div layout className="grid md:grid-cols-2 gap-5" data-testid="work-grid">
+        <motion.div layout className="grid md:grid-cols-2 gap-5 eq-grid" data-testid="work-grid">
           <AnimatePresence mode="popLayout">
             {filtered.map((p, i) => (
               <ProjectRecord key={p.id} project={p} index={i} large={i === 0 && active === "ALL"} />

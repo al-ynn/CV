@@ -63,7 +63,7 @@ export default function CaseStudy() {
       <div className="mt-8 mb-12">
         <div className="flex flex-wrap items-center gap-4 mb-5">
           <span className="font-mono text-[11px] tracking-[0.3em] text-violet">PROJECT / {p.num}</span>
-          <LevelTag level={p.disclosure === "PUBLIC" ? "AVAILABLE" : p.disclosure === "LIMITED DISCLOSURE" ? "EXPERIENCE" : "LEARNING"} />
+          <LevelTag level={p.disclosure === "PUBLIC" ? "FAMILIAR" : p.disclosure === "LIMITED DISCLOSURE" ? "WORKING KNOWLEDGE" : "LEARNING"} />
         </div>
         <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-none text-ink">
           {p.title}

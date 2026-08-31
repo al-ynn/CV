@@ -114,7 +114,7 @@ export default function Navbar({ onPalette }) {
               </button>
             </div>
             <nav className="flex-1 overflow-y-auto px-5 py-8" aria-label="Mobile">
-              {[{ to: "/", label: "Home", num: "00" }, ...NAV_LINKS].map((l, i) => (
+              {NAV_LINKS.map((l, i) => (
                 <motion.button
                   key={l.to}
                   data-testid={`mobile-nav-${l.label.toLowerCase()}`}

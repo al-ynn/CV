@@ -106,10 +106,21 @@ async def bootstrap():
 
     profile = singles.get("profile", {})
     site = singles.get("site", {})
+    contact = singles.get("contact", {})
     socials = {k: v for k, v in (profile.get("socials") or {}).items() if v}
     availability = site.get("availability", "available")
     settings = {
-        "contactEmail": profile.get("contactEmail", ""),
+        "contactEmail": contact.get("email") or profile.get("contactEmail", ""),
+        "contact": {
+            "email": contact.get("email") or profile.get("contactEmail", ""),
+            "mobile": contact.get("mobile", "") or profile.get("phone", ""),
+            "whatsapp": contact.get("whatsapp", ""),
+            "facebookName": contact.get("facebookName", ""),
+            "facebookUrl": contact.get("facebookUrl", ""),
+            "github": contact.get("github", "") or socials.get("github", ""),
+            "linkedin": contact.get("linkedin", "") or socials.get("linkedin", ""),
+            "other": contact.get("other", ""),
+        },
         "socials": socials,
         "github": socials.get("github", ""),
         "linkedin": socials.get("linkedin", ""),
@@ -180,7 +191,7 @@ async def sitemap(request: Request):
     base = (seo.get("canonical") or os.environ.get("FRONTEND_URL", "")).rstrip("/")
     if not base:
         base = str(request.base_url).rstrip("/")
-    paths = ["", "/about", "/work", "/services", "/pricing", "/journey", "/resume", "/contact"]
+    paths = ["", "/about", "/work", "/services", "/pricing", "/experience", "/resume", "/contact"]
     projects = await db.projects.find({"status": "published", "archived": {"$ne": True}}, {"slug": 1}).to_list(200)
     paths += [f"/work/{p['slug']}" for p in projects if p.get("slug")]
     urls = "".join(f"<url><loc>{base}{p}</loc></url>" for p in paths)
@@ -352,7 +363,170 @@ CMS_SEEDS = {
 }
 
 
+LEVEL_MAP = {"CORE": "CORE", "PROFICIENT": "PROFICIENT", "EXPERIENCE": "PROFICIENT",
+             "AVAILABLE": "WORKING KNOWLEDGE", "WORKING KNOWLEDGE": "WORKING KNOWLEDGE",
+             "FAMILIAR": "FAMILIAR", "LEARNING": "LEARNING"}
+
+PRICING_V2 = [
+    {"id": "pr-landing", "name": "STATIC LANDING PAGE", "kind": "static", "min": 3000, "max": 5000, "plus": False,
+     "typical": ["1 page", "Responsive", "Basic contact information", "Provided content", "Basic deployment assistance"],
+     "note": "Single-page sites with provided content.", "featured": False, "order": 1, "status": "published"},
+    {"id": "pr-multi", "name": "STATIC MULTI-PAGE WEBSITE", "kind": "static", "min": 5000, "max": 10000, "plus": False,
+     "typical": ["3–5 pages", "Business / company website", "Responsive", "Basic forms", "Provided content"],
+     "note": "Company and portfolio sites.", "featured": False, "order": 2, "status": "published"},
+    {"id": "pr-custom-ui", "name": "CUSTOM UI STATIC WEBSITE", "kind": "static", "min": 7000, "max": 15000, "plus": False,
+     "typical": ["Custom interface", "Figma design", "Animations", "Responsive requirements"],
+     "note": "Depends on pages and interface complexity.", "featured": False, "order": 3, "status": "published"},
+    {"id": "pr-dynamic", "name": "DYNAMIC WEBSITE", "kind": "dynamic", "min": 10000, "max": 20000, "plus": False,
+     "typical": ["Database-driven content", "Login", "Admin content management", "Basic user accounts"],
+     "note": "Backend and database included.", "featured": False, "order": 4, "status": "published"},
+    {"id": "pr-system", "name": "WEB APPLICATION / SYSTEM", "kind": "system", "min": 15000, "max": 40000, "plus": True,
+     "typical": ["Multiple modules", "User roles", "Database complexity", "Business workflows", "Reporting", "Integrations"],
+     "note": "Priced primarily by module and workflow complexity.", "featured": True, "order": 5, "status": "published"},
+    {"id": "pr-ecommerce", "name": "E-COMMERCE", "kind": "system", "min": 15000, "max": 30000, "plus": True,
+     "typical": ["Products", "Customer accounts", "Inventory", "Admin", "Checkout", "Payment gateway", "Order management"],
+     "note": "Payment integrations and complex administration affect the range.", "featured": True, "order": 6, "status": "published"},
+    {"id": "pr-uiux", "name": "UI/UX DESIGN", "kind": "design", "min": 2500, "max": 7500, "plus": True,
+     "typical": ["Number of screens", "Complexity", "Wireframes", "Responsive versions", "Prototype requirements"],
+     "note": "Priced per screen count and fidelity.", "featured": False, "order": 7, "status": "published"},
+    {"id": "pr-bugfix", "name": "BUG FIX / SMALL FEATURE", "kind": "support", "min": 500, "max": 2500, "plus": True,
+     "typical": ["Issue investigation", "Repair", "Small features"],
+     "note": "Depends on investigation and complexity.", "featured": False, "order": 8, "status": "published"},
+]
+
+ESTIMATOR_V2 = {
+    "types": [
+        {"label": "Landing Page", "kind": "static", "min": 3000, "max": 5000, "weeks": 1, "complexity": "SIMPLE"},
+        {"label": "Company Website", "kind": "static", "min": 5000, "max": 10000, "weeks": 2, "complexity": "SIMPLE"},
+        {"label": "Portfolio Website", "kind": "static", "min": 4000, "max": 8000, "weeks": 1, "complexity": "SIMPLE"},
+        {"label": "Dynamic Website", "kind": "dynamic", "min": 10000, "max": 20000, "weeks": 4, "complexity": "STANDARD"},
+        {"label": "E-Commerce Website", "kind": "system", "min": 15000, "max": 30000, "weeks": 6, "complexity": "ADVANCED"},
+        {"label": "Web Application", "kind": "system", "min": 15000, "max": 40000, "weeks": 6, "complexity": "ADVANCED"},
+        {"label": "Information System", "kind": "system", "min": 15000, "max": 40000, "weeks": 8, "complexity": "ADVANCED"},
+        {"label": "Internal Business System", "kind": "system", "min": 15000, "max": 40000, "weeks": 8, "complexity": "ADVANCED"},
+        {"label": "Dashboard", "kind": "dynamic", "min": 8000, "max": 18000, "weeks": 3, "complexity": "STANDARD"},
+        {"label": "Existing System Improvement", "kind": "dynamic", "min": 2000, "max": 10000, "weeks": 2, "complexity": "STANDARD"},
+        {"label": "UI/UX Only", "kind": "design", "min": 2500, "max": 7500, "weeks": 2, "complexity": "STANDARD"},
+    ],
+    "pageBrackets": [
+        {"label": "1", "addMin": 0, "addMax": 0},
+        {"label": "2–3", "addMin": 1500, "addMax": 3000},
+        {"label": "4–5", "addMin": 2500, "addMax": 5000},
+        {"label": "6–10", "addMin": 4000, "addMax": 9000},
+        {"label": "10+", "addMin": 6000, "addMax": 15000},
+    ],
+    "moduleBrackets": [
+        {"label": "1–2", "addMin": 0, "addMax": 2000, "weeks": 0},
+        {"label": "3–5", "addMin": 3000, "addMax": 8000, "weeks": 2},
+        {"label": "6–10", "addMin": 8000, "addMax": 18000, "weeks": 4},
+        {"label": "10+", "addMin": 15000, "addMax": 35000, "weeks": 8},
+    ],
+    "architectureNote": "Dynamic application pricing is primarily based on features, roles, data, workflows and integrations rather than screen count.",
+    "philosophyHeading": "PRICING BUILT AROUND THE SYSTEM, NOT A RANDOM PACKAGE.",
+    "philosophyBody": "Every project has different requirements. A five-page static company website is fundamentally different from a five-page application with authentication, dashboards, database workflows and administrative tools. Pricing is therefore calculated from actual scope rather than page count alone.",
+    "resultDisclaimer": "THIS IS NOT A FINAL QUOTATION. Your final quotation is based on what the project actually needs.",
+}
+
+
+async def migrate_v5():
+    # capabilities: status -> standardized proficiency level
+    async for cat in db.services.find({}):
+        changed = False
+        caps = cat.get("capabilities", [])
+        for cap in caps:
+            if "level" not in cap:
+                cap["level"] = LEVEL_MAP.get(cap.get("status"), "WORKING KNOWLEDGE")
+                cap["shortDesc"] = cap.get("desc", "")
+                cap.setdefault("detail", "")
+                cap.setdefault("technologies", [])
+                cap.setdefault("projects", [])
+                cap.setdefault("price", "")
+                cap.setdefault("featured", False)
+                cap.setdefault("visible", True)
+                cap.pop("status", None)
+                cap.pop("desc", None)
+                changed = True
+        if changed or "slug" not in cat:
+            slug = cat.get("slug") or re.sub(r"[^a-z0-9]+", "-", cat.get("title", "").lower()).strip("-")
+            await db.services.update_one(
+                {"id": cat["id"]},
+                {"$set": {"capabilities": caps, "slug": slug, "featured": cat.get("featured", False),
+                          "longDescription": cat.get("longDescription", "")}},
+            )
+    # pricing: rebuild to range-based references if legacy shape
+    legacy = await db.pricing.find_one({"min": {"$exists": False}})
+    if legacy:
+        await db.pricing.delete_many({})
+        await db.pricing.insert_many([dict(p) for p in PRICING_V2])
+    # estimator: merge v2 keys
+    est = await db.singletons.find_one({"key": "estimator"})
+    if est and "types" in est.get("data", {}) and "pageBrackets" not in est["data"]:
+        data = est["data"]
+        data.update(ESTIMATOR_V2)
+        await db.singletons.update_one({"key": "estimator"}, {"$set": {"data": data}})
+
+
+DEFAULT_CONTACT = {
+    "email": "aleanaamurao12@gmail.com",
+    "mobile": "0945 137 3741",
+    "whatsapp": "639451373741",
+    "facebookName": "Yenzii Stdio",
+    "facebookUrl": "",
+    "github": "",
+    "linkedin": "",
+    "other": "",
+}
+
+
+async def migrate_v6():
+    # contact singleton: single source of truth for direct channels
+    existing = await db.singletons.find_one({"key": "contact"})
+    if not existing:
+        await db.singletons.insert_one(
+            {"key": "contact", "data": dict(DEFAULT_CONTACT), "updated_at": datetime.now(timezone.utc).isoformat()}
+        )
+    # proficiency labels: EXPERIENCE / AVAILABLE -> standardized scale
+    await db.technologies.update_many({"level": "EXPERIENCE"}, {"$set": {"level": "PROFICIENT"}})
+    await db.technologies.update_many({"level": "AVAILABLE"}, {"$set": {"level": "FAMILIAR"}})
+    async for sk in db.skills.find({}):
+        items = sk.get("items", [])
+        changed = False
+        for it in items:
+            if it.get("level") in ("EXPERIENCE", "AVAILABLE"):
+                it["level"] = "PROFICIENT" if it["level"] == "EXPERIENCE" else "FAMILIAR"
+                changed = True
+        if changed:
+            await db.skills.update_one({"id": sk["id"]}, {"$set": {"items": items}})
+    # homepage config: remove journey section, add contact channels + roadmap phases
+    defaults = home_cms.default_homepage_config()
+    async for doc in db.homepage_config.find({"key": {"$in": ["draft", "published"]}}):
+        data = doc.get("data", {})
+        changed = False
+        sections = [s for s in data.get("sections", []) if s.get("key") != "journey"]
+        if len(sections) != len(data.get("sections", [])):
+            changed = True
+        if not any(s.get("key") == "contactChannels" for s in sections):
+            idx = next((i for i, s in enumerate(sections) if s.get("key") == "finalCta"), len(sections))
+            sections.insert(idx, {"key": "contactChannels", "visible": True})
+            changed = True
+        data["sections"] = sections
+        data.pop("journey", None)
+        if "contactChannels" not in data:
+            data["contactChannels"] = defaults["contactChannels"]
+            changed = True
+        rm = data.get("roadmap", {})
+        if "phases" not in rm:
+            rm.update(defaults["roadmap"])
+            rm.pop("stages", None)
+            rm.pop("intro", None)
+            changed = True
+        if changed:
+            await db.homepage_config.update_one({"key": doc["key"]}, {"$set": {"data": data}})
+
+
 async def seed_content():
+    await migrate_v5()
+    await migrate_v6()
     if await db.services.count_documents({}) == 0:
         await db.services.insert_many([dict(s) for s in DEFAULT_SERVICES])
     if await db.pricing.count_documents({}) == 0:

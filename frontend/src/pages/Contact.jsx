@@ -5,6 +5,7 @@ import api, { formatApiError } from "../lib/api";
 import { useContent } from "../lib/content";
 import useSeo from "../lib/useSeo";
 import { TechLabel, StatusDot } from "../components/system/bits";
+import DirectChannels from "../components/ContactChannels";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
 
 const DEFAULT_TYPES = ["Full-Stack Web Development", "UI/UX & Product Design", "E-Commerce Development",
@@ -96,17 +97,15 @@ export default function Contact() {
                 {settings.availability === "limited" ? "Limited" : settings.available ? "Available" : "Unavailable"}
               </span>
             </div>
-            {settings.contactEmail && (
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-ink3">Direct</span>
-                <a href={`mailto:${settings.contactEmail}`} data-testid="contact-email-link"
-                  className="text-violet hover:underline truncate">{settings.contactEmail}</a>
-              </div>
-            )}
             <div className="flex items-center justify-between">
               <span className="text-ink3">Small budgets</span>
               <span className="text-ink">Welcome</span>
             </div>
+          </div>
+
+          <div className="mt-10">
+            <TechLabel className="block mb-4">DIRECT.CONTACT</TechLabel>
+            <DirectChannels settings={settings} columns="grid-cols-1" testidPrefix="contact-channel" />
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { MotionConfig } from "framer-motion";
 import Lenis from "lenis";
 import { ThemeProvider } from "@/lib/theme";
@@ -14,6 +14,7 @@ import CaseStudy from "@/pages/CaseStudy";
 import Services from "@/pages/Services";
 import Pricing from "@/pages/Pricing";
 import Journey from "@/pages/Journey";
+import Experience from "@/pages/Experience";
 import Resume from "@/pages/Resume";
 import Contact from "@/pages/Contact";
 import NotFound from "@/pages/NotFound";
@@ -52,7 +53,8 @@ function App() {
                 <Route path="/work/:slug" element={<CaseStudy />} />
                 <Route path="/services" element={<Services />} />
                 <Route path="/pricing" element={<Pricing />} />
-                <Route path="/journey" element={<Journey />} />
+                <Route path="/experience" element={<Experience />} />
+                <Route path="/journey" element={<Navigate to="/experience" replace />} />
                 <Route path="/resume" element={<Resume />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="*" element={<NotFound />} />

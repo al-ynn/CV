@@ -9,18 +9,20 @@ export const ABOUT_TEMPLATES = [
 export const PHOTO_ROLES = ["Professional Portrait", "Workspace", "Coding", "Project", "Education", "Sports", "Lifestyle", "Personal", "Other"];
 
 export const BUILTIN_SECTIONS = [
-  "intro", "story", "workingStudent", "howIWork", "principles", "specializations", "beyondCode",
+  "intro", "story", "storyTimeline", "workingStudent", "howIWork", "principles", "specializations", "beyondCode",
   "offClock", "interests", "careerGoal", "openTo", "stats", "currentFocus", "education",
-  "experience", "projects", "certifications", "resumeCta", "contactCta", "sportDevMap",
+  "experience", "projects", "certifications", "gallery", "resumeCta", "contactCta", "sportDevMap",
 ];
 
 export const SECTION_NAMES = {
-  intro: "Introduction / Bio", story: "My Story", workingStudent: "Working Student",
+  intro: "Introduction / Bio", story: "My Story", storyTimeline: "Interactive Timeline",
+  workingStudent: "Working Student",
   howIWork: "How I Work", principles: "Principles", specializations: "Specializations",
   beyondCode: "Beyond Code", offClock: "Sports & Gaming", interests: "Interests",
   careerGoal: "Career Goal", openTo: "Open To", stats: "Statistics", currentFocus: "Current Focus",
   education: "Education", experience: "Experience", projects: "Projects Highlight",
-  certifications: "Certifications", resumeCta: "Resume CTA", contactCta: "Contact CTA",
+  certifications: "Certifications", gallery: "Photo Gallery",
+  resumeCta: "Resume CTA", contactCta: "Contact CTA",
   sportDevMap: "Sport → Development Map",
 };
 
