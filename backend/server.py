@@ -1,0 +1,354 @@
+import os
+import re
+import uuid
+import secrets
+import logging
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+ROOT_DIR = Path(__file__).parent
+load_dotenv(ROOT_DIR / ".env")
+
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends, UploadFile, File
+from fastapi.responses import FileResponse, Response
+from starlette.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, EmailStr
+from typing import Optional, List
+
+from db import db, client
+from auth import (
+    create_access_token, verify_password, hash_password, get_current_admin, seed_admin,
+    create_indexes, check_lockout, record_failed_attempt, clear_attempts,
+)
+from emailer import send_email, inquiry_notification_html, reset_email_html
+from seed_data import (
+    DEFAULT_SERVICES, DEFAULT_PRICING, DEFAULT_PROJECTS,
+    SEED_EXPERIENCE, SEED_EDUCATION, SEED_CERTIFICATIONS, SEED_JOURNEY,
+    SEED_SKILLS, SEED_TECHNOLOGIES, SEED_SINGLETONS,
+)
+from resume import ensure_generated_resume, get_resume_bytes, save_custom_resume
+from storage import get_object, init_storage
+import cms
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+
+app = FastAPI()
+api = APIRouter(prefix="/api")
+
+
+class LoginIn(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class ForgotIn(BaseModel):
+    email: EmailStr
+
+
+class ResetIn(BaseModel):
+    token: str
+    password: str
+
+
+class PasswordChangeIn(BaseModel):
+    current: str
+    new: str
+
+
+class InquiryIn(BaseModel):
+    name: str
+    email: EmailStr
+    company: Optional[str] = ""
+    projectType: Optional[str] = ""
+    budget: Optional[str] = ""
+    timeline: Optional[str] = ""
+    message: str
+    brief: Optional[dict] = None
+    website: Optional[str] = ""  # honeypot
+
+
+class InquiryPatch(BaseModel):
+    status: Optional[str] = None
+    notes: Optional[str] = None
+
+
+async def get_site_singleton():
+    doc = await db.singletons.find_one({"key": "site"}, {"_id": 0})
+    return doc["data"] if doc else {}
+
+
+# ---------- public ----------
+
+@api.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
+@api.get("/content/bootstrap")
+async def bootstrap():
+    out = {}
+    for name in cms.PUBLISHABLE:
+        out[name] = await db[name].find(
+            {"status": "published", "archived": {"$ne": True}}, {"_id": 0}
+        ).sort("order", 1).to_list(500)
+    singles = {}
+    for key in cms.SINGLETONS:
+        doc = await db.singletons.find_one({"key": key}, {"_id": 0})
+        singles[key] = doc["data"] if doc else {}
+
+    profile = singles.get("profile", {})
+    site = singles.get("site", {})
+    socials = {k: v for k, v in (profile.get("socials") or {}).items() if v}
+    availability = site.get("availability", "available")
+    settings = {
+        "contactEmail": profile.get("contactEmail", ""),
+        "socials": socials,
+        "github": socials.get("github", ""),
+        "linkedin": socials.get("linkedin", ""),
+        "available": availability != "unavailable",
+        "availability": availability,
+        "location": profile.get("location", "Philippines"),
+        "siteName": site.get("siteName", "AMURAO.DEV"),
+        "version": site.get("version", "PORTFOLIO / 1.1"),
+        "copyright": site.get("copyright", ""),
+        "fullName": profile.get("fullName", "Aleana Rose C. Amurao"),
+        "title": profile.get("title", ""),
+    }
+    return {
+        "settings": settings,
+        "homepage": singles.get("homepage", {}),
+        "about": singles.get("about", {}),
+        "estimator": singles.get("estimator", {}),
+        "seo": singles.get("seo", {}),
+        "appearance": singles.get("appearance", {}),
+        **out,
+    }
+
+
+@api.post("/inquiries")
+async def create_inquiry(payload: InquiryIn):
+    if payload.website:
+        return {"status": "received"}
+    doc = payload.model_dump(exclude={"website"})
+    doc["id"] = str(uuid.uuid4())
+    doc["status"] = "NEW"
+    doc["notes"] = ""
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.inquiries.insert_one(doc)
+
+    site = await get_site_singleton()
+    owner = (site.get("ownerNotifyEmail") or "").strip()
+    emailed = False
+    if owner:
+        try:
+            await send_email(to=owner, subject=f"New project inquiry — {payload.name}",
+                             html=inquiry_notification_html(doc))
+            emailed = True
+        except Exception as e:
+            logger.error(f"Inquiry email failed: {e}")
+    return {"status": "received", "id": doc["id"], "emailed": emailed}
+
+
+@api.get("/resume.pdf")
+async def resume_pdf():
+    data = await get_resume_bytes()
+    return Response(content=data, media_type="application/pdf",
+                    headers={"Content-Disposition": 'inline; filename="Aleana-Amurao-CV.pdf"'})
+
+
+@api.get("/media/files/{media_id}")
+async def serve_media(media_id: str):
+    doc = await db.media.find_one({"id": media_id, "is_deleted": {"$ne": True}}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Not found")
+    data, content_type = await get_object(doc["storage_path"])
+    return Response(content=data, media_type=doc.get("mime") or content_type)
+
+
+@api.get("/sitemap.xml")
+async def sitemap(request: Request):
+    seo_doc = await db.singletons.find_one({"key": "seo"}, {"_id": 0})
+    seo = (seo_doc or {}).get("data", {})
+    base = (seo.get("canonical") or os.environ.get("FRONTEND_URL", "")).rstrip("/")
+    if not base:
+        base = str(request.base_url).rstrip("/")
+    paths = ["", "/about", "/work", "/services", "/pricing", "/journey", "/resume", "/contact"]
+    projects = await db.projects.find({"status": "published", "archived": {"$ne": True}}, {"slug": 1}).to_list(200)
+    paths += [f"/work/{p['slug']}" for p in projects if p.get("slug")]
+    urls = "".join(f"<url><loc>{base}{p}</loc></url>" for p in paths)
+    xml = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>'
+    return Response(content=xml, media_type="application/xml")
+
+
+# ---------- auth ----------
+
+@api.post("/auth/login")
+async def login(payload: LoginIn, request: Request):
+    email = payload.email.lower()
+    identifier = f"{request.client.host}:{email}"
+    await check_lockout(identifier)
+    user = await db.users.find_one({"email": email})
+    if not user or not verify_password(payload.password, user["password_hash"]):
+        await record_failed_attempt(identifier)
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    await clear_attempts(identifier)
+    token = create_access_token(user["id"], email)
+    return {"token": token, "user": {"email": email, "name": user.get("name", "Admin"), "role": user.get("role", "admin")}}
+
+
+@api.get("/auth/me")
+async def me(admin=Depends(get_current_admin)):
+    return admin
+
+
+@api.post("/auth/forgot-password")
+async def forgot_password(payload: ForgotIn):
+    email = payload.email.lower()
+    user = await db.users.find_one({"email": email, "role": "admin"})
+    if user:
+        token = secrets.token_urlsafe(32)
+        await db.password_reset_tokens.insert_one({
+            "token": token, "email": email, "used": False,
+            "expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
+        })
+        link = f"{os.environ.get('FRONTEND_URL', '').rstrip('/')}/admin/reset/{token}"
+        try:
+            await send_email(to=email, subject="Reset your admin password", html=reset_email_html(link))
+        except Exception as e:
+            logger.error(f"Reset email failed: {e}")
+    return {"status": "ok"}
+
+
+@api.post("/auth/reset-password")
+async def reset_password(payload: ResetIn):
+    if len(payload.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+    rec = await db.password_reset_tokens.find_one({"token": payload.token, "used": False})
+    if not rec or datetime.fromisoformat(rec["expires_at"]) < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Reset link is invalid or expired.")
+    await db.users.update_one({"email": rec["email"]}, {"$set": {"password_hash": hash_password(payload.password)}})
+    await db.password_reset_tokens.update_one({"token": payload.token}, {"$set": {"used": True}})
+    return {"status": "ok"}
+
+
+@api.post("/admin/password")
+async def change_password(payload: PasswordChangeIn, admin=Depends(get_current_admin)):
+    user = await db.users.find_one({"id": admin["id"]})
+    if not verify_password(payload.current, user["password_hash"]):
+        raise HTTPException(status_code=400, detail="Current password is incorrect.")
+    if len(payload.new) < 8:
+        raise HTTPException(status_code=400, detail="New password must be at least 8 characters.")
+    await db.users.update_one({"id": admin["id"]}, {"$set": {"password_hash": hash_password(payload.new)}})
+    return {"status": "ok"}
+
+
+# ---------- admin (non-generic) ----------
+
+@api.get("/admin/stats")
+async def admin_stats(admin=Depends(get_current_admin)):
+    stats = {
+        "inquiries_total": await db.inquiries.count_documents({}),
+        "inquiries_new": await db.inquiries.count_documents({"status": "NEW"}),
+        "media": await db.media.count_documents({"is_deleted": {"$ne": True}}),
+    }
+    drafts = 0
+    for name in cms.PUBLISHABLE:
+        stats[name] = await db[name].count_documents({"archived": {"$ne": True}})
+        drafts += await db[name].count_documents({"status": "draft", "archived": {"$ne": True}})
+    stats["drafts"] = drafts
+    return stats
+
+
+@api.get("/admin/inquiries")
+async def list_inquiries(admin=Depends(get_current_admin)):
+    return await db.inquiries.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+
+
+@api.patch("/admin/inquiries/{inq_id}")
+async def update_inquiry(inq_id: str, payload: InquiryPatch, admin=Depends(get_current_admin)):
+    update = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if update:
+        await db.inquiries.update_one({"id": inq_id}, {"$set": update})
+    return {"status": "ok"}
+
+
+@api.delete("/admin/inquiries/{inq_id}")
+async def delete_inquiry(inq_id: str, admin=Depends(get_current_admin)):
+    await db.inquiries.delete_one({"id": inq_id})
+    return {"status": "ok"}
+
+
+@api.post("/admin/resume")
+async def upload_resume(file: UploadFile = File(...), admin=Depends(get_current_admin)):
+    if not file.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="PDF only")
+    content = await file.read()
+    if len(content) > 8 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large (max 8 MB)")
+    doc = await save_custom_resume(content, file.filename)
+    await cms.log_activity("uploaded", f"resume: {file.filename}", "resume")
+    return {"status": "ok", "bytes": doc["size"], "at": datetime.now(timezone.utc).isoformat()}
+
+
+# ---------- startup ----------
+
+CMS_SEEDS = {
+    "experience": SEED_EXPERIENCE,
+    "education": SEED_EDUCATION,
+    "certifications": SEED_CERTIFICATIONS,
+    "journey": SEED_JOURNEY,
+    "skills": SEED_SKILLS,
+    "technologies": SEED_TECHNOLOGIES,
+}
+
+
+async def seed_content():
+    if await db.services.count_documents({}) == 0:
+        await db.services.insert_many([dict(s) for s in DEFAULT_SERVICES])
+    if await db.pricing.count_documents({}) == 0:
+        await db.pricing.insert_many([dict(p) for p in DEFAULT_PRICING])
+    if await db.projects.count_documents({}) == 0:
+        await db.projects.insert_many([dict(p) for p in DEFAULT_PROJECTS])
+    for name, docs in CMS_SEEDS.items():
+        if await db[name].count_documents({}) == 0:
+            await db[name].insert_many([dict(d) for d in docs])
+    for key, data in SEED_SINGLETONS.items():
+        await db.singletons.update_one(
+            {"key": key}, {"$setOnInsert": {"key": key, "data": data}}, upsert=True
+        )
+    # migration: v1 records lack CMS status flags
+    for name in cms.PUBLISHABLE:
+        await db[name].update_many({"status": {"$exists": False}}, {"$set": {"status": "published"}})
+        await db[name].update_many({"archived": {"$exists": False}}, {"$set": {"archived": False}})
+
+
+@app.on_event("startup")
+async def startup():
+    await create_indexes()
+    await db.password_reset_tokens.create_index("token")
+    await seed_admin()
+    await seed_content()
+    try:
+        init_storage()
+        await ensure_generated_resume()
+    except Exception as e:
+        logger.error(f"Storage/resume init failed: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown():
+    client.close()
+
+
+api.include_router(cms.router, prefix="/admin")
+app.include_router(api)
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=False,
+    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
+    allow_methods=["*"],
+    allow_headers=["*"],
+)

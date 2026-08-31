@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+
+Sitemap: https://full-stack-systems.preview.emergentagent.com/api/sitemap.xml
