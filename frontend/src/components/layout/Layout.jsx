@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
+import CursorTrail from "../system/CursorTrail";
 
 export default function Layout({ onPalette }) {
   const { pathname } = useLocation();
@@ -12,6 +13,7 @@ export default function Layout({ onPalette }) {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <CursorTrail />
       <Navbar onPalette={onPalette} />
       <main className="flex-1 pt-16">
         <motion.div

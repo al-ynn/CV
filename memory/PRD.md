@@ -68,6 +68,14 @@ aesthetic + polished light mode. Concept: "a résumé encoded into a software in
   resume.pdf from object storage; activity log; export; search; singletons
 - Frontend: home renders CMS content; admin login, dashboard, project list, editor
 
+## Implemented (2026-09-01 v5 — ambient design pass + micro-interactions)
+- Aurora/orb/dot-matrix ambient backgrounds across Home, Services, all 5 About templates
+  (pure transform/opacity CSS, reduced-motion safe, blur reduced on small screens)
+- Cursor Trail: soft violet cursor-follow glow (CursorTrail.jsx, mounted in Layout);
+  desktop fine-pointer only, disabled on touch / reduced-motion / ≤2-core devices
+- Hero Terminal: live typing deployment-log chip inside System Profile panel
+  (DeployLog in Home.jsx, loops 4 log lines; static final line under reduced motion)
+
 ## Pending / Notes
 - Owner notification email + public contact email + social URLs: set in Admin →
   Site Settings / Profile (blank = hidden, per no-fabrication rule)

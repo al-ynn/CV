@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { useContent } from "../lib/content";
@@ -28,6 +28,41 @@ function HeroTitle({ text }) {
         </span>
       ))}
     </h1>
+  );
+}
+
+const DEPLOY_LINES = [
+  "$ git push origin main",
+  "▸ build ........ PASSING",
+  "▸ tests ........ ALL OK",
+  "▸ deploy ....... amurao.dev ✓ LIVE",
+];
+
+function DeployLog() {
+  const [text, setText] = useState("");
+  const [line, setLine] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setText(DEPLOY_LINES[DEPLOY_LINES.length - 1]);
+      return;
+    }
+    let i = 0, timer;
+    const current = DEPLOY_LINES[line];
+    const type = () => {
+      i += 1;
+      setText(current.slice(0, i));
+      if (i < current.length) timer = setTimeout(type, 32);
+      else timer = setTimeout(() => setLine((l) => (l + 1) % DEPLOY_LINES.length), 1700);
+    };
+    timer = setTimeout(type, 350);
+    return () => clearTimeout(timer);
+  }, [line]);
+  return (
+    <div className="mt-4 flex items-center gap-2 px-3 py-2 border border-line bg-canvas2/60 font-mono text-[9px] tracking-[0.08em] overflow-hidden whitespace-nowrap" data-testid="hero-deploy-log">
+      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--green)" }} />
+      <span className="truncate" style={{ color: "var(--green)" }}>{text}</span>
+      <span className="text-violet animate-blink shrink-0">▌</span>
+    </div>
   );
 }
 
@@ -91,6 +126,7 @@ function SystemProfile({ cfg, content }) {
             </span>
           ))}
         </div>
+        <DeployLog />
       </div>
     </div>
   );
