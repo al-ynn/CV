@@ -8,17 +8,63 @@ import {
 const ChapterHead = ({ num, title, sub }) => (
   <div className="flex items-center gap-4 mb-8">
     <span className="font-mono text-[11px] tracking-[0.3em] text-violet">{num}</span>
-    <span className="h-px flex-1 bg-line" />
+    <span className="h-px flex-1 bg-gradient-to-r from-violet/60 via-line to-transparent" />
     <span className="font-display text-lg sm:text-xl font-extrabold tracking-tight text-ink">{title}</span>
     {sub && <TechLabel>{sub}</TechLabel>}
   </div>
 );
+
+const ChapterDivider = () => (
+  <div className="flex justify-center py-2">
+    <div className="relative w-40">
+      <div className="hr-gradient" />
+      <span className="absolute left-1/2 -translate-x-1/2 -top-1.5 w-3 h-3 rounded-full bg-violet/40 blur-sm" />
+      <span className="absolute left-1/2 -translate-x-1/2 -top-0.5 w-1 h-1 rounded-full bg-violet" />
+    </div>
+  </div>
+);
+
+// ---------- Ambient wrapper — soft aurora + accent orbs for every About template ----------
+
+function AboutAmbient({ children, variant = "default" }) {
+  const orbs = {
+    default: [
+      { cls: "orb-violet orb-float-a", style: { width: "24rem", height: "24rem", top: "-6rem", left: "-6rem" } },
+      { cls: "orb-cyan orb-float-b hidden md:block",   style: { width: "20rem", height: "20rem", top: "30rem", right: "-6rem" } },
+      { cls: "orb-pink orb-float-c hidden lg:block",   style: { width: "16rem", height: "16rem", bottom: "20%", left: "45%" } },
+    ],
+    story: [
+      { cls: "orb-violet orb-float-a", style: { width: "22rem", height: "22rem", top: "8rem", left: "-6rem" } },
+      { cls: "orb-amber orb-float-c hidden md:block",  style: { width: "18rem", height: "18rem", top: "60%", right: "-4rem" } },
+      { cls: "orb-cyan orb-float-b hidden lg:block",   style: { width: "14rem", height: "14rem", bottom: "10%", left: "20%" } },
+    ],
+    editorial: [
+      { cls: "orb-cyan orb-float-a", style: { width: "26rem", height: "26rem", top: "-4rem", right: "-6rem" } },
+      { cls: "orb-violet orb-float-b hidden md:block",   style: { width: "20rem", height: "20rem", top: "50%", left: "-6rem" } },
+      { cls: "orb-pink orb-float-c hidden lg:block",     style: { width: "14rem", height: "14rem", bottom: "-4rem", right: "20%" } },
+    ],
+    system: [
+      { cls: "orb-violet orb-float-a", style: { width: "24rem", height: "24rem", top: "-6rem", left: "-6rem" } },
+      { cls: "orb-cyan orb-float-b hidden md:block",   style: { width: "22rem", height: "22rem", top: "40%", right: "-6rem" } },
+    ],
+  };
+  const chosen = orbs[variant] || orbs.default;
+  return (
+    <div className="relative bg-aurora-soft bg-dots overflow-hidden">
+      {chosen.map((o, i) => (
+        <span key={i} aria-hidden="true" className={`orb ${o.cls}`} style={o.style} />
+      ))}
+      <div className="relative">{children}</div>
+    </div>
+  );
+}
 
 // ---------- TEMPLATE 01 — PROFILE (1 photo, restrained) ----------
 
 function ProfileTemplate({ profile, ctx }) {
   const portrait = photoByRole(profile, "Professional Portrait", 0);
   return (
+    <AboutAmbient variant="default">
     <div className="mx-auto max-w-[1200px] px-5 sm:px-8 py-16 sm:py-24 space-y-20">
       <section className="grid lg:grid-cols-12 gap-12 items-center">
         {portrait && (
@@ -29,7 +75,7 @@ function ProfileTemplate({ profile, ctx }) {
         <div className={portrait ? "lg:col-span-7" : "lg:col-span-12 max-w-3xl"}>
           <TechLabel className="block mb-5 text-violet">PROFILE / 01</TechLabel>
           <h1 className="font-display font-extrabold tracking-tight leading-[0.95] text-5xl sm:text-6xl text-ink">
-            ALEANA<br />AMURAO
+            ALEANA<br /><span className="gradient-text">AMURAO</span>
           </h1>
           <p className="mt-5 font-mono text-xs tracking-[0.2em] uppercase text-ink2 leading-loose">
             Full-Stack &<br />Systems Developer
@@ -43,6 +89,7 @@ function ProfileTemplate({ profile, ctx }) {
       </section>
       {renderSections(profile, ctx)}
     </div>
+    </AboutAmbient>
   );
 }
 
@@ -52,6 +99,7 @@ function DualFrameTemplate({ profile, ctx }) {
   const portrait = photoByRole(profile, "Professional Portrait", 0);
   const workspace = photoByRole(profile, "Workspace", 1);
   return (
+    <AboutAmbient variant="default">
     <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-16 sm:py-24 space-y-24">
       <section>
         <ChapterHead num="01" title="WHO I AM" />
@@ -61,7 +109,7 @@ function DualFrameTemplate({ profile, ctx }) {
         </div>
       </section>
 
-      <div className="flex justify-center"><span className="font-mono text-violet text-xl animate-blink">↓</span></div>
+      <ChapterDivider />
 
       <section>
         <ChapterHead num="02" title="WHAT I BUILD" />
@@ -73,7 +121,7 @@ function DualFrameTemplate({ profile, ctx }) {
         </div>
       </section>
 
-      <div className="flex justify-center"><span className="font-mono text-violet text-xl animate-blink">↓</span></div>
+      <ChapterDivider />
 
       <section>
         <ChapterHead num="03" title="WHERE I'M GOING" />
@@ -83,6 +131,7 @@ function DualFrameTemplate({ profile, ctx }) {
         </div>
       </section>
     </div>
+    </AboutAmbient>
   );
 }
 
@@ -100,6 +149,7 @@ function StoryTemplate({ profile, ctx }) {
     ["BUILDING FORWARD", [s.today, s.theGoal].filter(Boolean).join("\n\n"), null],
   ];
   return (
+    <AboutAmbient variant="story">
     <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-16 sm:py-24 space-y-24">
       <section className="max-w-3xl"><IntroSection profile={profile} /></section>
 
@@ -110,9 +160,9 @@ function StoryTemplate({ profile, ctx }) {
               <div className={`lg:col-span-7 ${i % 2 === 1 ? "lg:order-2" : ""}`}>
                 <div className="flex items-center gap-4 mb-5">
                   <span className="font-mono text-[11px] tracking-[0.3em] text-violet">{String(i + 1).padStart(2, "0")}</span>
-                  <span className="h-px flex-1 bg-line" />
+                  <span className="h-px flex-1 bg-gradient-to-r from-violet/60 via-line to-transparent" />
                 </div>
-                <h2 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight text-ink mb-6">{label}</h2>
+                <h2 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight text-ink mb-6"><span className="gradient-text-cool">{label}</span></h2>
                 <p className="text-sm sm:text-base text-ink2 leading-relaxed whitespace-pre-line">{body}</p>
               </div>
               {photo && (
@@ -121,9 +171,7 @@ function StoryTemplate({ profile, ctx }) {
                 </div>
               )}
             </div>
-            {i < beats.length - 1 && (
-              <div className="flex justify-center mt-14"><span className="font-mono text-violet animate-blink">↓</span></div>
-            )}
+            {i < beats.length - 1 && <ChapterDivider />}
           </section>
         ) : null
       )}
@@ -132,6 +180,7 @@ function StoryTemplate({ profile, ctx }) {
         {renderSections(profile, ctx, { skip: ["intro", "story"] })}
       </section>
     </div>
+    </AboutAmbient>
   );
 }
 
@@ -150,8 +199,9 @@ function SystemProfileTemplate({ profile, ctx }) {
     ["AVAILABILITY", (s.availability || "available").toUpperCase()],
   ];
   return (
+    <AboutAmbient variant="system">
     <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-16 sm:py-24 space-y-20">
-      <section className="panel">
+      <section className="panel scan-line relative">
         <div className="flex items-center justify-between px-5 py-3 border-b border-line">
           <span className="font-mono text-[10px] tracking-[0.25em] text-violet">PERSON_PROFILE</span>
           <StatusDot />
@@ -189,6 +239,7 @@ function SystemProfileTemplate({ profile, ctx }) {
         // counts derived live from the portfolio database — {stats.projects ?? 0} projects, {stats.technologies ?? 0} technologies, {stats.certifications ?? 0} certifications
       </p>
     </div>
+    </AboutAmbient>
   );
 }
 
@@ -208,6 +259,7 @@ function EditorialJourneyTemplate({ profile, ctx }) {
   const nextPhoto = () => (photos.length ? photos[photoIdx++ % photos.length] : null);
 
   return (
+    <AboutAmbient variant="editorial">
     <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-16 sm:py-24 space-y-28">
       <section className="grid lg:grid-cols-12 gap-12 items-end">
         <div className="lg:col-span-8"><IntroSection profile={profile} /></div>
@@ -256,6 +308,7 @@ function EditorialJourneyTemplate({ profile, ctx }) {
         {renderSections(profile, ctx, { skip: ["intro", "story", "specializations", "stats"] })}
       </section>
     </div>
+    </AboutAmbient>
   );
 }
 

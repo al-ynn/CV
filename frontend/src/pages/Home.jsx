@@ -22,7 +22,7 @@ function HeroTitle({ text }) {
           <motion.span className="block" initial={{ y: "112%" }} animate={{ y: 0 }}
             transition={{ delay: 0.2 + i * 0.13, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
             {line.split(/(\*[^*]+\*)/g).map((part, j) =>
-              part.startsWith("*") ? <span key={j} className="text-violet">{part.replaceAll("*", "")}</span> : part
+              part.startsWith("*") ? <span key={j} className="gradient-text">{part.replaceAll("*", "")}</span> : part
             )}
           </motion.span>
         </span>
@@ -159,12 +159,14 @@ function WhatIBuild({ cfg, num }) {
   const items = (cfg.items || []).filter((i) => i.visible);
   if (!items.length) return null;
   return (
-    <section className="border-y border-line bg-canvas2/40" data-testid="home-whatibuild">
-      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
+    <section className="relative border-y border-line bg-canvas2/40 bg-dots overflow-hidden" data-testid="home-whatibuild">
+      <span aria-hidden="true" className="orb orb-violet orb-float-b hidden md:block" style={{ width: "18rem", height: "18rem", top: "10%", right: "-6rem" }} />
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28 relative">
         <SectionHead num={num} bigNum={num} eyebrow="CAPABILITY_INDEX" title={cfg.heading || "WHAT I BUILD"} />
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line eq-grid">
           {items.map((w, i) => (
-            <Reveal key={w.title + i} delay={i * 0.07} className="bg-card p-7 group hover:bg-canvas2/60 transition-colors flex flex-col">
+            <Reveal key={w.title + i} delay={i * 0.07} className="bg-card p-7 group hover:bg-canvas2/60 transition-colors flex flex-col relative overflow-hidden shine">
+              <span aria-hidden="true" className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-violet/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <span className="font-mono text-[10px] tracking-[0.3em] text-violet">{w.techLabel || String(i + 1).padStart(2, "0")}</span>
               <h3 className="mt-4 font-display text-lg font-bold tracking-tight text-ink group-hover:text-violet transition-colors">{w.title}</h3>
               <p className="mt-3 text-sm text-ink2 leading-relaxed line-clamp-4">{w.desc}</p>
@@ -287,8 +289,10 @@ function TechStack({ cfg, content, num }) {
   list.forEach((t) => { (byCat[t.category || "Other"] = byCat[t.category || "Other"] || []).push(t); });
   const maxRows = Math.max(...Object.values(byCat).map((items) => items.length));
   return (
-    <section className="border-y border-line bg-canvas2/40" data-testid="home-techstack">
-      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
+    <section className="relative border-y border-line bg-canvas2/40 bg-circuit overflow-hidden" data-testid="home-techstack">
+      <span aria-hidden="true" className="orb orb-cyan orb-float-a hidden md:block" style={{ width: "20rem", height: "20rem", top: "-4rem", left: "-4rem" }} />
+      <span aria-hidden="true" className="orb orb-violet orb-float-c hidden lg:block" style={{ width: "16rem", height: "16rem", bottom: "-3rem", right: "-3rem" }} />
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28 relative">
         <SectionHead num={num} bigNum={num} eyebrow="STACK.INDEX" title={cfg.heading || "TECHNICAL\nSTACK"}
           sub={cfg.sub || "Proficiency labeled honestly. Click a technology to see where it's proven."} />
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 eq-grid">
@@ -341,8 +345,9 @@ function Roadmap({ cfg, num }) {
 
 function ContactChannelsSection({ cfg, content, num }) {
   return (
-    <section className="border-t border-line bg-canvas2/40" data-testid="home-contact-channels">
-      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
+    <section className="relative border-t border-line bg-canvas2/40 bg-aurora-soft overflow-hidden" data-testid="home-contact-channels">
+      <span aria-hidden="true" className="orb orb-pink orb-float-b hidden md:block" style={{ width: "18rem", height: "18rem", top: "10%", right: "-4rem" }} />
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28 relative">
         <SectionHead num={num} bigNum={num} eyebrow="OPEN.CHANNELS" title={cfg.heading || "DIRECT\nCHANNELS"}
           sub={cfg.sub || "No forms required. Reach me directly through any of these."} />
         <DirectChannels settings={content.settings} testidPrefix="home-channel" compact />
@@ -353,8 +358,10 @@ function ContactChannelsSection({ cfg, content, num }) {
 
 function FinalCta({ cfg, content }) {
   return (
-    <section className="border-t border-line bg-grid" data-testid="home-final-cta">
-      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-24 sm:py-32 text-center">
+    <section className="border-t border-line bg-grid bg-aurora-cta relative overflow-hidden" data-testid="home-final-cta">
+      <span aria-hidden="true" className="orb orb-violet orb-float-a" style={{ width: "26rem", height: "26rem", top: "-8rem", left: "-6rem" }} />
+      <span aria-hidden="true" className="orb orb-cyan orb-float-b hidden md:block" style={{ width: "22rem", height: "22rem", bottom: "-8rem", right: "-6rem" }} />
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-24 sm:py-32 text-center relative">
         <Reveal>
           <div className="flex items-center justify-center gap-2 mb-6">
             <StatusDot color={content.settings.available ? "var(--green)" : "var(--amber)"} />
@@ -362,18 +369,18 @@ function FinalCta({ cfg, content }) {
           </div>
           <h2 className="font-display font-extrabold tracking-tight leading-[0.95] text-5xl sm:text-7xl text-ink whitespace-pre-line">
             {(cfg.heading || "").split(/(\*[^*]+\*)/g).map((part, j) =>
-              part.startsWith("*") ? <span key={j} className="text-violet">{part.replaceAll("*", "")}</span> : part
+              part.startsWith("*") ? <span key={j} className="gradient-text">{part.replaceAll("*", "")}</span> : part
             )}
           </h2>
           {cfg.body && <p className="mt-6 max-w-xl mx-auto text-sm sm:text-base text-ink2 leading-relaxed">{cfg.body}</p>}
           <div className="mt-10 flex flex-wrap justify-center gap-4">
             <Link to="/contact" data-testid="home-contact-cta"
-              className="inline-flex h-12 items-center px-8 bg-violet font-mono text-[11px] tracking-[0.2em] uppercase font-semibold hover:opacity-90 transition-opacity"
-              style={{ color: "var(--bg)" }}>
-              {cfg.buttonLabel || "LET'S TALK →"}
+              className="group relative inline-flex h-12 items-center px-8 font-mono text-[11px] tracking-[0.2em] uppercase font-semibold hover:opacity-90 transition-opacity overflow-hidden"
+              style={{ color: "var(--bg)", background: "linear-gradient(90deg, var(--violet), color-mix(in srgb, var(--violet) 55%, var(--pink)))" }}>
+              <span className="relative z-10">{cfg.buttonLabel || "LET'S TALK →"}</span>
             </Link>
             <Link to="/pricing#estimator" data-testid="home-estimator-cta"
-              className="inline-flex h-12 items-center px-8 border border-line font-mono text-[11px] tracking-[0.2em] uppercase text-ink hover:border-violet hover:text-violet transition-colors">
+              className="inline-flex h-12 items-center px-8 border border-line font-mono text-[11px] tracking-[0.2em] uppercase text-ink hover:border-violet hover:text-violet transition-colors bg-card/60 backdrop-blur-sm">
               Estimate Scope ₱
             </Link>
           </div>
@@ -413,8 +420,12 @@ export function HomeRenderer({ config, content }) {
       )}
 
       {sections.find((x) => x.key === "hero") && (
-        <section ref={heroRef} className="relative bg-grid overflow-hidden">
-          <div className="mx-auto max-w-[1440px] px-5 sm:px-8 pt-16 sm:pt-24 pb-16 sm:pb-20 grid lg:grid-cols-12 gap-12 items-center">
+        <section ref={heroRef} className="relative bg-grid bg-aurora overflow-hidden">
+          {/* Floating accent orbs — pure CSS, transform-only. */}
+          <span aria-hidden="true" className="orb orb-violet orb-float-a" style={{ width: "22rem", height: "22rem", top: "-6rem", left: "-4rem" }} />
+          <span aria-hidden="true" className="orb orb-cyan orb-float-b hidden md:block" style={{ width: "18rem", height: "18rem", top: "4rem", right: "-4rem" }} />
+          <span aria-hidden="true" className="orb orb-pink orb-float-c hidden lg:block" style={{ width: "14rem", height: "14rem", bottom: "-3rem", left: "40%" }} />
+          <div className="mx-auto max-w-[1440px] px-5 sm:px-8 pt-16 sm:pt-24 pb-16 sm:pb-20 grid lg:grid-cols-12 gap-12 items-center relative">
             <motion.div className="lg:col-span-7" style={{ opacity: heroOpacity }}>
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
                 className="flex items-center gap-3 mb-8">
