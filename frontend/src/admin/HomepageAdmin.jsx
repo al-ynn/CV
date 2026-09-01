@@ -55,6 +55,24 @@ const SECTION_META = {
 };
 const GROUP_ORDER = ["IDENTITY", "PORTFOLIO", "PROCESS", "CONTACT"];
 
+const PRESETS = {
+  recruiter: {
+    label: "RECRUITER MODE",
+    hint: "Skills & CV first",
+    order: ["hero", "techStack", "metrics", "featuredProjects", "whatIBuild", "roadmap", "services", "contactChannels", "finalCta"],
+  },
+  client: {
+    label: "CLIENT MODE",
+    hint: "Services & projects first",
+    order: ["hero", "services", "featuredProjects", "whatIBuild", "metrics", "techStack", "roadmap", "contactChannels", "finalCta"],
+  },
+  default: {
+    label: "DEFAULT",
+    hint: "Balanced original order",
+    order: ["hero", "metrics", "featuredProjects", "whatIBuild", "services", "techStack", "roadmap", "contactChannels", "finalCta"],
+  },
+};
+
 export default function HomepageAdmin() {
   const { refresh } = useContent();
   const [cfg, setCfg] = useState(null);
@@ -143,6 +161,19 @@ export default function HomepageAdmin() {
   const caps = sp.capabilities || [];
   const phases = cfg.roadmap?.phases || [];
   const sectionVisible = (key) => (cfg.sections || []).find((s) => s.key === key)?.visible !== false;
+
+  const activePreset = Object.keys(PRESETS).find((k) =>
+    JSON.stringify((cfg.sections || []).map((s) => s.key)) ===
+    JSON.stringify(PRESETS[k].order.filter((key) => (cfg.sections || []).some((s) => s.key === key)))
+  );
+
+  const applyPreset = (key) => {
+    const byKey = Object.fromEntries((cfg.sections || []).map((s) => [s.key, s]));
+    const next = PRESETS[key].order.filter((k) => byKey[k]).map((k) => byKey[k]);
+    (cfg.sections || []).forEach((s) => { if (!PRESETS[key].order.includes(s.key)) next.push(s); });
+    set("sections", next);
+    setMsg(`✓ ${PRESETS[key].label} applied to draft — preview it, then Save Draft or Publish`);
+  };
 
   // ---------- section form bodies ----------
   const FORMS = {
@@ -490,6 +521,20 @@ export default function HomepageAdmin() {
         <div className="px-5 py-3.5 border-b border-line flex items-center justify-between">
           <span className="font-display font-bold text-sm text-ink">PAGE STRUCTURE — VISIBILITY & ORDER</span>
           <span className="font-mono text-[9px] text-ink3 uppercase tracking-[0.15em]">{(cfg.sections || []).filter((s) => s.visible).length} visible</span>
+        </div>
+        <div className="px-4 py-3 border-b border-line flex flex-wrap items-center gap-2" data-testid="hp-presets">
+          <span className="font-mono text-[9px] tracking-[0.2em] text-ink3 uppercase mr-1">One-click presets</span>
+          {Object.entries(PRESETS).map(([k, p]) => (
+            <button key={k} onClick={() => applyPreset(k)} data-testid={`hp-preset-${k}`} title={p.hint}
+              className={`h-8 px-3 border font-mono text-[9px] tracking-[0.15em] uppercase transition-colors ${
+                activePreset === k ? "border-violet text-violet bg-violet/10" : "border-line text-ink2 hover:border-violet hover:text-violet"
+              }`}>
+              {activePreset === k && "● "}{p.label}
+            </button>
+          ))}
+          <span className="font-mono text-[9px] text-ink3 uppercase tracking-[0.1em] w-full sm:w-auto sm:ml-1">
+            {activePreset ? PRESETS[activePreset].hint : "custom order"}
+          </span>
         </div>
         <div className="divide-y divide-line">
           {(cfg.sections || []).map((s, i) => (

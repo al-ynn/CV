@@ -79,6 +79,10 @@ aesthetic + polished light mode. Concept: "a résumé encoded into a software in
   gradient-fill CTA on the closing panel (CaseStudy.jsx)
 - Experience git-log timeline: deterministic commit-hash prefixes, "$ git log --graph"
   chips, animated gradient connector beams (.timeline-beam / -amb, reduced-motion safe)
+- Homepage one-click presets (HomepageAdmin.jsx): RECRUITER MODE (hero → tech stack →
+  metrics → projects, skills/CV first), CLIENT MODE (services/projects first), DEFAULT.
+  Reorders draft sections only; active preset auto-detected and highlighted. Recruiter
+  draft currently saved (public unchanged) with a live real-data preview verified.
 
 ## Pending / Notes
 - Owner notification email + public contact email + social URLs: set in Admin →
