@@ -51,7 +51,7 @@ export default function CommandPalette({ open, setOpen }) {
             className="w-full h-12 bg-transparent font-mono text-sm text-ink placeholder:text-ink3 focus:outline-none"
           />
         </div>
-        <Command.List className="max-h-72 overflow-y-auto p-2">
+        <Command.List className="max-h-72 overflow-y-auto overscroll-contain p-2">
           <Command.Empty className="py-8 text-center font-mono text-xs text-ink3">NO MATCHING COMMAND</Command.Empty>
           {items.map((item) => (
             <Command.Item

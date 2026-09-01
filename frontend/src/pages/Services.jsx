@@ -1,191 +1,116 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { Search, SlidersHorizontal, X, ArrowRight, Layers3, Check } from "lucide-react";
 import { useContent } from "../lib/content";
 import useSeo from "../lib/useSeo";
-import { SectionHead, TechLabel, LevelTag, Reveal } from "../components/system/bits";
-import { X } from "lucide-react";
+import { SectionHead, TechLabel, Reveal } from "../components/system/bits";
 
-function CapabilityCard({ cap, cat, index, onOpen, relatedCount }) {
-  if (cap.visible === false) return null;
-  return (
-    <Reveal delay={index * 0.04} className="h-full">
-      <button
-        onClick={onOpen}
-        data-testid={`cap-${cat.slug}-${(cap.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
-        className="group w-full text-left panel panel-hover p-5 relative overflow-hidden eq-card"
-      >
-        <div className="absolute top-0 left-0 w-full h-0.5 bg-violet scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500" />
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <h3 className="font-display text-base font-bold tracking-tight text-ink group-hover:text-violet transition-colors leading-snug">
-            {cap.name}
-          </h3>
-          {cap.featured && <span className="font-mono text-[8px] tracking-[0.2em] text-violet shrink-0">★</span>}
-        </div>
-        <p className="text-xs text-ink2 leading-relaxed line-clamp-2 min-h-[2rem]">{cap.shortDesc}</p>
-        {(cap.technologies || []).length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {cap.technologies.slice(0, 4).map((t) => (
-              <span key={t} className="font-mono text-[8px] tracking-[0.12em] uppercase px-1.5 py-0.5 border border-line text-ink3">{t}</span>
-            ))}
-          </div>
-        )}
-        <div className="eq-card-foot mt-4 pt-3 border-t border-line flex items-center justify-between gap-2">
-          <LevelTag level={cap.level} />
-          {relatedCount > 0 && (
-            <span className="font-mono text-[9px] tracking-[0.15em] text-ink3">USED IN {String(relatedCount).padStart(2, "0")} PROJECT{relatedCount === 1 ? "" : "S"}</span>
-          )}
-        </div>
+const list = (value) => Array.isArray(value) ? value : String(value || "").split(/,|\n/).map((item) => item.trim()).filter(Boolean);
+const textOf = (cap) => cap.shortDesc || cap.desc || cap.description || "";
+const normalize = (cap) => ({
+  ...cap,
+  shortDesc: textOf(cap),
+  detail: cap.detail || cap.description || textOf(cap),
+  includes: list(cap.includes), goodFor: list(cap.goodFor), addOns: list(cap.addOns),
+  tags: list(cap.tags || cap.technologies), keywords: list(cap.keywords), projects: list(cap.projects),
+});
+const slug = (value) => String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+function ServiceCard({ category, index, onOpen }) {
+  const capabilities = (category.capabilities || []).map(normalize);
+  return <Reveal delay={Math.min(index, 8) * 0.035} className="h-full">
+    <article className="group h-full min-h-[250px] panel panel-hover p-5 sm:p-6 flex flex-col relative overflow-hidden card-hover-lift">
+      <span className="absolute top-0 left-0 h-0.5 w-full bg-violet scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500" />
+      <div className="flex items-center justify-between gap-4"><TechLabel className="text-violet/80">SERVICE / {category.num || String(index + 1).padStart(2, "0")}</TechLabel><TechLabel>{String(capabilities.length).padStart(2, "0")} CAPABILITIES</TechLabel></div>
+      <h3 className="mt-5 font-display text-xl sm:text-2xl font-bold tracking-tight text-ink group-hover:text-violet transition-colors">{category.title}</h3>
+      <p className="mt-3 text-sm leading-relaxed text-ink2 line-clamp-3">{category.blurb}</p>
+      <div className="mt-5 flex flex-wrap gap-1.5">{capabilities.slice(0, 4).map((cap) => <span key={cap.name} className="px-2 py-1 border border-line font-mono text-[8px] tracking-[0.1em] uppercase text-ink3">{cap.name}</span>)}</div>
+      <button type="button" onClick={onOpen} data-testid={`service-${slug(category.slug || category.id)}`}
+        className="mt-auto pt-5 flex items-center gap-2 text-sm font-semibold text-ink2 group-hover:text-violet transition-colors">
+        View more <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
       </button>
-    </Reveal>
-  );
+    </article>
+  </Reveal>;
 }
 
-function CapabilityModal({ cap, cat, projects, onClose }) {
-  if (!cap) return null;
-  const related = (cap.projects || [])
-    .map((slug) => projects.find((p) => p.slug === slug))
-    .filter(Boolean);
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal="true" data-testid="capability-modal">
-      <div className="absolute inset-0 bg-canvas/85 backdrop-blur-sm" onClick={onClose} />
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="relative panel w-full max-w-2xl max-h-[85vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-line sticky top-0 bg-card z-10">
-          <span className="font-mono text-[10px] tracking-[0.25em] text-violet uppercase">{cat.title} / CAPABILITY</span>
-          <button onClick={onClose} aria-label="Close" data-testid="capability-close" className="text-ink3 hover:text-ink"><X size={16} /></button>
+function DetailGroup({ title, items }) {
+  if (!items.length) return null;
+  return <div><TechLabel className="block mb-3">{title}</TechLabel><ul className="grid sm:grid-cols-2 gap-2">{items.map((item) => <li key={item} className="flex gap-2.5 border border-line bg-canvas/30 p-3 text-sm leading-relaxed text-ink2"><Check size={14} className="mt-0.5 shrink-0 text-violet" />{item}</li>)}</ul></div>;
+}
+
+function ServiceDetails({ selected, onClose }) {
+  if (!selected) return null;
+  const category = selected;
+  const capabilities = (category.capabilities || []).map(normalize);
+  return <motion.div className="fixed inset-0 z-[80] flex justify-end bg-canvas/80 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} role="dialog" aria-modal="true" onClick={onClose}>
+    <motion.aside initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 40, opacity: 0 }} transition={{ ease: [0.16, 1, 0.3, 1] }}
+      className="relative w-full max-w-5xl h-full overflow-y-auto overscroll-contain border-l border-line bg-card shadow-2xl" onClick={(event) => event.stopPropagation()}>
+      <div className="sticky top-0 z-10 px-5 sm:px-7 py-4 border-b border-line bg-card/95 backdrop-blur flex items-center justify-between">
+        <TechLabel className="text-violet">SERVICE DETAILS</TechLabel><button type="button" onClick={onClose} className="grid place-items-center w-10 h-10 border border-line text-ink3 hover:text-violet hover:border-violet" aria-label="Close service details"><X size={16} /></button>
+      </div>
+      <div className="p-6 sm:p-9">
+        <TechLabel>SERVICE / {category.num || "—"}</TechLabel>
+        <h2 className="mt-3 font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ink">{category.title}</h2>
+        <p className="mt-5 text-base leading-relaxed text-ink2">{category.longDescription || category.blurb}</p>
+        <div className="mt-7 border border-line p-4 flex items-center justify-between gap-4"><div><TechLabel className="block">AVAILABLE CAPABILITIES</TechLabel><strong className="block mt-1 text-sm text-ink">{capabilities.length} specialized services</strong></div><Layers3 size={20} className="text-violet" /></div>
+        <div className={`mt-8 grid gap-3 ${capabilities.length <= 2 ? "sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
+          {capabilities.map((cap, index) => <article key={cap.name} className="h-full border border-line bg-canvas/30 p-4 sm:p-5">
+            <div className="flex items-start gap-4"><span className="font-mono text-[10px] text-violet">{String(index + 1).padStart(2, "0")}</span><div className="min-w-0 flex-1"><h3 className="font-display text-lg font-bold text-ink">{cap.name}</h3><p className="mt-1 text-sm leading-relaxed text-ink2">{cap.detail || cap.shortDesc}</p></div></div>
+            <div className="mt-4 flex flex-wrap gap-2"><span className="px-2 py-1 border border-line font-mono text-[8px] tracking-[0.12em] text-violet">{cap.level || "WORKING KNOWLEDGE"}</span>{cap.price && <span className="px-2 py-1 border border-line font-mono text-[8px] tracking-[0.12em] text-ink3">FROM {cap.price}</span>}{cap.tags.slice(0, 4).map((tag) => <span key={tag} className="px-2 py-1 border border-line font-mono text-[8px] tracking-[0.1em] uppercase text-ink3">{tag}</span>)}</div>
+            {(cap.includes.length > 0 || cap.goodFor.length > 0) && <div className="mt-5 space-y-5"><DetailGroup title="WHAT CAN BE INCLUDED" items={cap.includes} /><DetailGroup title="GOOD FOR" items={cap.goodFor} /></div>}
+          </article>)}
         </div>
-        <div className="p-6 sm:p-8">
-          <h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">{cap.name}</h2>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <LevelTag level={cap.level} />
-            {cap.price && <span className="font-mono text-[10px] tracking-[0.15em] text-amb uppercase">from {cap.price}</span>}
-          </div>
-          <p className="mt-5 text-sm text-ink2 leading-relaxed whitespace-pre-line">{cap.detail || cap.shortDesc}</p>
-          {(cap.technologies || []).length > 0 && (
-            <div className="mt-6">
-              <TechLabel className="block mb-3">STACK</TechLabel>
-              <div className="flex flex-wrap gap-1.5">
-                {cap.technologies.map((t) => (
-                  <span key={t} className="font-mono text-[9px] tracking-[0.12em] uppercase px-2 py-1 border border-line text-ink2">{t}</span>
-                ))}
-              </div>
-            </div>
-          )}
-          {related.length > 0 && (
-            <div className="mt-6">
-              <TechLabel className="block mb-3">PROVEN IN</TechLabel>
-              <div className="space-y-2">
-                {related.map((p) => (
-                  <Link key={p.id} to={`/work/${p.slug}`} onClick={onClose}
-                    className="flex items-center justify-between panel panel-hover px-4 py-3 group">
-                    <span className="font-mono text-xs text-ink group-hover:text-violet transition-colors">{p.title} — {p.subtitle}</span>
-                    <span className="font-mono text-[9px] text-ink3">CASE STUDY →</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-          <div className="mt-8 pt-5 border-t border-line flex flex-wrap gap-3">
-            <Link to="/contact" onClick={onClose} data-testid="capability-inquire"
-              className="h-11 px-7 inline-flex items-center bg-violet font-mono text-[10px] tracking-[0.2em] uppercase font-semibold"
-              style={{ color: "var(--bg)" }}>
-              Request This Service →
-            </Link>
-            <Link to="/pricing" onClick={onClose}
-              className="h-11 px-6 inline-flex items-center border border-line font-mono text-[10px] tracking-[0.2em] uppercase text-ink2 hover:border-violet">
-              Estimate Scope ₱
-            </Link>
-          </div>
+        <div className="mt-10 pt-6 border-t border-line flex flex-wrap gap-3">
+          <Link to="/contact" state={{ service: category.title }} onClick={onClose} data-testid="capability-inquire"
+            className="inline-flex min-h-12 items-center gap-2 px-6 bg-violet text-sm font-semibold hover:brightness-110" style={{ color: "var(--bg)" }}>Discuss This Project <ArrowRight size={15} /></Link>
+          <Link to="/pricing#estimator" onClick={onClose} className="inline-flex min-h-12 items-center px-6 border border-line text-sm font-semibold text-ink2 hover:text-violet hover:border-violet">Estimate Scope</Link>
         </div>
-      </motion.div>
-    </div>
-  );
+      </div>
+    </motion.aside>
+  </motion.div>;
 }
 
 export default function Services() {
-  const { services, projects, loading } = useContent();
+  const { services, loading } = useContent();
   useSeo("Services");
-  const [active, setActive] = useState(null);
-  const [openCap, setOpenCap] = useState(null);
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("ALL");
+  const [selected, setSelected] = useState(null);
+  const visible = useMemo(() => services.map((cat) => ({ ...cat, capabilities: (cat.capabilities || []).filter((cap) => cap.visible !== false) })), [services]);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return visible.filter((cat) => category === "ALL" || (cat.slug || cat.id) === category).map((cat) => ({
+      ...cat,
+      capabilities: cat.capabilities.filter((raw) => {
+        if (!q) return true;
+        const cap = normalize(raw);
+        return [cat.title, cat.blurb, cap.name, cap.shortDesc, cap.detail, ...cap.includes, ...cap.goodFor, ...cap.addOns, ...cap.tags, ...cap.keywords].join(" ").toLowerCase().includes(q);
+      }),
+    })).filter((cat) => cat.capabilities.length);
+  }, [visible, category, query]);
+  const resultCount = filtered.reduce((sum, cat) => sum + cat.capabilities.length, 0);
+  const totalCount = visible.reduce((sum, cat) => sum + cat.capabilities.length, 0);
 
-  const cat = services.find((s) => s.slug === active) || services[0];
-  const caps = ((cat?.capabilities) || []).filter((c) => c.visible !== false);
-
-  const relatedCount = (cap) => {
-    if ((cap.projects || []).length) return cap.projects.length;
-    if (!(cap.technologies || []).length) return 0;
-    return projects.filter((p) => (p.stack || []).some((s) => cap.technologies.some((t) => s.toLowerCase().includes(t.toLowerCase())))).length;
-  };
-
-  return (
-    <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-16 sm:py-24">
-      <SectionHead num="03 /" title={`SERVICES / ${String(services.length || 0).padStart(2, "0")}`}
-        sub="A capability matrix — not a list. Select a service domain; every capability carries its experience level, stack, and proof." />
-
-      {loading && <p className="font-mono text-xs text-ink3 animate-blink mb-6">LOADING SERVICE MODULES…</p>}
-
-      <TechLabel className="block mb-4">SELECT SERVICE DOMAIN</TechLabel>
-      <div className="flex flex-wrap gap-2 mb-12" role="tablist" aria-label="Service domains">
-        {services.map((s) => (
-          <button
-            key={s.id}
-            role="tab"
-            aria-selected={cat?.id === s.id}
-            data-testid={`domain-${s.slug || s.id}`}
-            onClick={() => setActive(s.slug || s.id)}
-            className={`px-4 h-10 font-mono text-[10px] tracking-[0.2em] uppercase border transition-colors ${
-              cat?.id === s.id ? "border-violet text-violet bg-violet/10" : "border-line text-ink3 hover:text-ink hover:border-ink3"
-            }`}
-          >
-            {s.title}
-          </button>
-        ))}
+  return <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-16 sm:py-24">
+    <SectionHead num="03 /" title={`SERVICES / ${String(visible.length).padStart(2, "0")}`} sub="Explore the services I can provide for websites, systems, online stores, product design, and ongoing development support." />
+    <section className="panel p-4 sm:p-5 mb-14 bg-grid" aria-label="Search and filter services">
+      <TechLabel className="block mb-3">SEARCH SERVICES</TechLabel>
+      <div className="grid md:grid-cols-[1fr_300px] gap-3">
+        <label className="relative block"><Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink3" /><input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Search for a service, feature, or solution…" data-testid="services-search" className="w-full h-12 pl-11 pr-4 bg-card border border-line text-sm text-ink placeholder:text-ink3 focus:border-violet focus:outline-none" /></label>
+        <label className="relative block"><SlidersHorizontal size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink3 pointer-events-none" /><select value={category} onChange={(event) => setCategory(event.target.value)} data-testid="services-category-filter" className="w-full h-12 pl-11 pr-4 bg-card border border-line text-sm text-ink focus:border-violet focus:outline-none appearance-auto"><option value="ALL">All service categories</option>{visible.map((cat) => <option key={cat.id} value={cat.slug || cat.id}>{cat.title}</option>)}</select></label>
       </div>
+      <div className="mt-3 flex items-center justify-between gap-4 font-mono text-[9px] tracking-[0.16em] uppercase text-ink3"><span>{query || category !== "ALL" ? `${resultCount} matching` : `${totalCount} available`} capabilities</span>{(query || category !== "ALL") && <button type="button" onClick={() => { setQuery(""); setCategory("ALL"); }} className="text-violet hover:underline">Clear filters</button>}</div>
+    </section>
 
-      {cat && (
-        <motion.div key={cat.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <div className="panel p-6 sm:p-8 mb-8 bg-grid">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <span className="font-mono text-[11px] tracking-[0.3em] text-violet">SERVICE / {cat.num}</span>
-                <h2 className="mt-2 font-display text-2xl sm:text-4xl font-extrabold tracking-tight text-ink leading-none">{cat.title}</h2>
-                <p className="mt-3 max-w-xl text-sm text-ink2 leading-relaxed">{cat.blurb}</p>
-              </div>
-              <div className="flex gap-8 font-mono text-[10px] uppercase">
-                <div><TechLabel className="block mb-1">Capabilities</TechLabel><span className="text-xl font-bold text-violet">{String(caps.length).padStart(2, "0")}</span></div>
-                {cat.featured && <div><TechLabel className="block mb-1">Featured</TechLabel><span className="text-xl font-bold text-grn">YES</span></div>}
-              </div>
-            </div>
-          </div>
+    {loading && <p className="font-mono text-xs text-ink3 animate-blink">LOADING SERVICE DIRECTORY…</p>}
+    {!loading && !filtered.length && <div className="panel p-12 text-center"><TechLabel className="block mb-3">0 RESULTS</TechLabel><p className="text-sm text-ink2">No services match that search. Try a broader term or clear the category filter.</p></div>}
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 eq-grid" data-testid="capability-grid">
-            {caps.map((cap, i) => (
-              <CapabilityCard key={cap.name} cap={cap} cat={cat} index={i} relatedCount={relatedCount(cap)}
-                onOpen={() => setOpenCap({ cap, cat })} />
-            ))}
-          </div>
-          {caps.length === 0 && (
-            <div className="panel p-10 text-center font-mono text-xs text-ink3">NO VISIBLE CAPABILITIES IN THIS DOMAIN</div>
-          )}
-        </motion.div>
-      )}
-
-      <div className="mt-16 panel p-8 text-center bg-grid">
-        <TechLabel className="block mb-3">SCOPE.UNKNOWN?</TechLabel>
-        <p className="font-display text-xl sm:text-2xl font-extrabold text-ink">NOT SURE WHICH SERVICE FITS?</p>
-        <Link to="/contact" data-testid="services-contact-cta"
-          className="mt-5 inline-flex h-11 items-center px-7 bg-violet font-mono text-[11px] tracking-[0.2em] uppercase font-semibold hover:opacity-90 transition-opacity"
-          style={{ color: "var(--bg)" }}>
-          Describe the Problem →
-        </Link>
-      </div>
-
-      <AnimatePresence>
-        {openCap && (
-          <CapabilityModal cap={openCap.cap} cat={openCap.cat} projects={projects} onClose={() => setOpenCap(null)} />
-        )}
-      </AnimatePresence>
+    <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4" data-testid="service-directory">
+      {filtered.map((cat, index) => <ServiceCard key={cat.id} category={cat} index={index} onOpen={() => setSelected(cat)} />)}
     </div>
-  );
+
+    <div className="mt-20 panel p-8 text-center bg-grid"><TechLabel className="block mb-3">SCOPE.UNKNOWN?</TechLabel><p className="font-display text-xl sm:text-2xl font-extrabold text-ink">NOT SURE WHICH SERVICE FITS?</p><Link to="/contact" className="mt-5 inline-flex h-11 items-center px-7 bg-violet font-mono text-[11px] tracking-[0.2em] uppercase font-semibold" style={{ color: "var(--bg)" }}>Describe the Problem →</Link></div>
+    <AnimatePresence>{selected && <ServiceDetails selected={selected} onClose={() => setSelected(null)} />}</AnimatePresence>
+  </div>;
 }

@@ -18,49 +18,69 @@ export default function ProjectRecord({ project, index = 0, large = false }) {
       <Link
         to={`/work/${p.slug}`}
         data-testid={`project-card-${p.slug}`}
-        className={`group eq-card panel panel-hover relative overflow-hidden ${large ? "p-7 sm:p-10" : "p-6"}`}
+        className={`group eq-card panel panel-hover relative overflow-hidden card-hover-lift ${large ? "p-7 sm:p-10" : "p-6"}`}
       >
+        {/* Top accent line animates on hover */}
         <div className="absolute top-0 left-0 w-full h-0.5 bg-violet scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500" />
+        
+        {/* Technical corner indicators */}
+        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <svg width="16" height="16" viewBox="0 0 16 16" className="text-violet">
+            <line x1="0" y1="0" x2="16" y2="0" stroke="currentColor" strokeWidth="1" />
+            <line x1="16" y1="0" x2="16" y2="16" stroke="currentColor" strokeWidth="1" />
+          </svg>
+        </div>
+        
         {p.cover && (
-          <div className="mb-5 border border-line overflow-hidden aspect-video bg-canvas2">
+          <div className="mb-5 border border-line overflow-hidden aspect-video bg-canvas2 group-hover:border-violet/30 transition-colors">
             <img src={`${BACKEND}${p.cover}`} alt={p.title} loading="lazy"
-              className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-500" />
+              className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-[1.03] transition-all duration-700" />
           </div>
         )}
-        <div className="flex items-start justify-between gap-4 mb-5">
-          <span className="font-mono text-[11px] tracking-[0.3em] text-violet group-hover:tracking-[0.38em] transition-all duration-300">PROJECT / {p.num || "—"}</span>
-          <span
-            className="font-mono text-[9px] tracking-[0.2em] px-2 py-0.5 border group-hover:border-violet/40 transition-colors"
-            style={{
-              color: p.disclosure === "PUBLIC" ? "var(--green)" : p.disclosure === "LIMITED DISCLOSURE" ? "var(--amber)" : "var(--pink)",
-              borderColor: "var(--line)",
-            }}
-          >
-            {p.disclosure}
-          </span>
-        </div>
-
-        <h3 className={`font-display font-extrabold tracking-tight text-ink leading-none group-hover:translate-x-1 transition-transform duration-300 ${large ? "text-3xl sm:text-4xl" : "text-2xl"}`}>
-          {p.title}
-        </h3>
-        <p className="mt-1.5 font-mono text-[11px] tracking-[0.2em] uppercase text-ink3">{p.subtitle}</p>
-        <p className="mt-4 text-sm text-ink2 leading-relaxed line-clamp-3">{p.description}</p>
-
-        <div className="mt-6 flex flex-wrap gap-1.5">
-          {(p.stack || []).slice(0, 6).map((s) => (
-            <span key={s} className="font-mono text-[9px] tracking-[0.15em] uppercase px-2 py-1 border border-line text-ink3 group-hover:border-violet/40 transition-colors">
-              {s}
+        
+        <div className="eq-card-content">
+          <div className="flex items-start justify-between gap-4 mb-4">
+            <span className="font-mono text-[11px] tracking-[0.3em] text-violet group-hover:tracking-[0.38em] transition-all duration-300">
+              PROJECT / {p.num || "—"}
             </span>
-          ))}
+            <span
+              className="font-mono text-[9px] tracking-[0.2em] px-2 py-0.5 border group-hover:border-violet/40 transition-colors shrink-0"
+              style={{
+                color: p.disclosure === "PUBLIC" ? "var(--green)" : p.disclosure === "LIMITED DISCLOSURE" ? "var(--amber)" : "var(--pink)",
+                borderColor: "var(--line)",
+              }}
+            >
+              {p.disclosure}
+            </span>
+          </div>
+
+          <h3 className={`font-display font-extrabold tracking-tight text-ink leading-[1.1] group-hover:translate-x-1 group-hover:text-violet transition-all duration-300 ${large ? "text-3xl sm:text-4xl" : "text-2xl"}`}>
+            {p.title}
+          </h3>
+          <p className="mt-1.5 font-mono text-[11px] tracking-[0.2em] uppercase text-ink3">{p.subtitle}</p>
+          
+          {/* Fixed height description area */}
+          <div className="mt-4 min-h-[4rem]">
+            <p className="text-sm text-ink2 leading-relaxed line-clamp-3">{p.description}</p>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-1.5 min-h-[2rem]">
+            {(p.stack || []).slice(0, 6).map((s) => (
+              <span key={s} className="font-mono text-[9px] tracking-[0.15em] uppercase px-2 py-1 border border-line text-ink3 group-hover:border-violet/40 group-hover:text-violet transition-colors h-fit">
+                {s}
+              </span>
+            ))}
+          </div>
         </div>
 
-        <div className="eq-card-foot mt-6 pt-4 border-t border-line flex items-center justify-between gap-3">
-          <div className="flex gap-6 font-mono text-[9px] tracking-[0.15em] uppercase text-ink3">
-            <span>TYPE — {p.type}</span>
-            <span>YEAR — {p.year}</span>
+        {/* Footer always at bottom */}
+        <div className="eq-card-foot pt-4 border-t border-line flex items-center justify-between gap-3">
+          <div className="flex gap-4 sm:gap-6 font-mono text-[9px] tracking-[0.15em] uppercase text-ink3">
+            <span className="whitespace-nowrap">TYPE — {p.type}</span>
+            <span className="whitespace-nowrap">YEAR — {p.year}</span>
           </div>
-          <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-ink2">
-            <SwapText label="VIEW PROJECT →" alt={`OPEN /PROJECT/${p.num || "—"} →`} />
+          <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-ink2 group-hover:text-violet transition-colors whitespace-nowrap">
+            <SwapText label="VIEW →" alt={`/PROJECT/${p.num || "—"} →`} />
           </span>
         </div>
       </Link>

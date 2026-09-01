@@ -128,7 +128,12 @@ function MetricsStrip({ cfg, content }) {
 function FeaturedProjects({ cfg, content, num }) {
   const byId = Object.fromEntries(content.projects.map((p) => [p.id, p]));
   let list = (cfg.ids || []).map((id) => byId[id]).filter(Boolean);
-  if (!list.length) list = content.projects.filter((p) => p.featured);
+  const preferredSlugs = ["soiltrack", "iot-operations-platform", "camela"];
+  const preferred = preferredSlugs.map((slug) => content.projects.find((p) => p.slug === slug)).filter(Boolean);
+  const isLegacySelection = list.some((p) => p.slug === "studya") && !list.some((p) => p.slug === "iot-operations-platform");
+  if (!list.length || isLegacySelection) {
+    list = preferred.length === preferredSlugs.length ? preferred : content.projects.filter((p) => p.featured);
+  }
   list = list.slice(0, cfg.max || 4);
   if (!list.length) return null;
   return (
@@ -174,20 +179,30 @@ function WhatIBuild({ cfg, num }) {
 function ServicesPreview({ cfg, content, num }) {
   const byId = Object.fromEntries(content.services.map((s) => [s.id, s]));
   let list = (cfg.ids || []).map((id) => byId[id]).filter(Boolean);
-  if (!list.length) list = content.services;
-  list = list.slice(0, cfg.max || 7);
+  const preferredIds = ["fullstack", "uiux", "infosystems", "backend"];
+  const legacyIds = list.map((s) => s.id);
+  const isLegacySelection = !list.length || (legacyIds.includes("ecommerce") && legacyIds.includes("backend"));
+  if (isLegacySelection) {
+    const preferred = preferredIds.map((id) => byId[id]).filter(Boolean);
+    list = preferred.length === 4 ? preferred : content.services;
+  }
+  list = list.slice(0, 4);
+  const homepageLabels = {
+    infosystems: "CUSTOM SYSTEM DEVELOPMENT",
+    backend: "DATABASE DESIGN",
+  };
   if (!list.length) return null;
   return (
     <section className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28" data-testid="home-services">
-      <SectionHead num={num} bigNum={num} eyebrow="SERVICE_INDEX" title={cfg.heading || "SERVICES"}
-        sub="Service areas. Each one a stack of specialized capabilities." />
+      <SectionHead num={num} bigNum={num} eyebrow="SERVICE_INDEX / FEATURED" title={cfg.heading && cfg.heading !== "SERVICES" ? cfg.heading : "FEATURED SERVICES"}
+        sub="Four featured service areas. Explore the full directory for every available capability." />
       <div className="border-t border-line">
         {list.map((s, i) => (
           <Reveal key={s.id} delay={i * 0.04}>
             <Link to="/services" data-testid={`home-service-${s.id}`}
               className="group flex items-center gap-4 sm:gap-8 py-5 border-b border-line hover:bg-canvas2/50 transition-colors px-2 sm:px-4">
               <span className="font-mono text-[11px] text-violet tracking-[0.2em] w-8 shrink-0">{s.num}</span>
-              <span className="font-display text-base sm:text-xl font-bold tracking-tight text-ink group-hover:text-violet group-hover:translate-x-1 transition-all flex-1 min-w-0 truncate">{s.title}</span>
+              <span className="font-display text-base sm:text-xl font-bold tracking-tight text-ink group-hover:text-violet group-hover:translate-x-1 transition-all flex-1 min-w-0 truncate">{homepageLabels[s.id] || s.title}</span>
               {cfg.showCount !== false && (
                 <span className="hidden md:block font-mono text-[9px] tracking-[0.15em] text-ink3 uppercase">
                   {(s.capabilities || []).length} SERVICES
@@ -316,7 +331,7 @@ function Roadmap({ cfg, num }) {
   if (!phases.length) return null;
   return (
     <section className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28" data-testid="home-roadmap">
-      <SectionHead num={num} bigNum={num} eyebrow={cfg.scopeLabel || "DEVELOPMENT WORKFLOW"}
+      <SectionHead num={num} bigNum={num} eyebrow={`${num} / ${cfg.scopeLabel || "DEVELOPMENT WORKFLOW — SYSTEM / WEB / APP PROJECTS"}`}
         title={cfg.heading || "SCRUM / PROTOTYPE\nROADMAP"} />
       <WhyScrum cfg={cfg} />
       <RoadmapCanvas cfg={cfg} />
@@ -330,7 +345,7 @@ function ContactChannelsSection({ cfg, content, num }) {
       <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
         <SectionHead num={num} bigNum={num} eyebrow="OPEN.CHANNELS" title={cfg.heading || "DIRECT\nCHANNELS"}
           sub={cfg.sub || "No forms required. Reach me directly through any of these."} />
-        <DirectChannels settings={content.settings} testidPrefix="home-channel" />
+        <DirectChannels settings={content.settings} testidPrefix="home-channel" compact />
       </div>
     </section>
   );
@@ -431,8 +446,9 @@ export function HomeRenderer({ config, content }) {
                 </Link>
                 {hero.resumeCta !== "" && (
                   <a href={`${BACKEND}/api/resume.pdf`} data-testid="hero-cta-cv"
-                    className="font-mono text-[11px] tracking-[0.2em] uppercase text-ink3 hover:text-violet transition-colors">
-                    {hero.resumeCta || "Download CV ↓"}
+                    className="group inline-flex h-12 items-center gap-3 px-5 border border-violet/50 bg-violet/5 font-mono text-[11px] tracking-[0.18em] uppercase font-semibold text-ink2 hover:text-violet hover:border-violet hover:bg-violet/10 hover:shadow-[0_0_24px_color-mix(in_srgb,var(--violet)_14%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet transition-all">
+                    <span>{(hero.resumeCta || "Download CV").replace(/\s*[↓↧]\s*$/, "")}</span>
+                    <span aria-hidden="true" className="text-violet text-base leading-none group-hover:translate-y-0.5 transition-transform">↓</span>
                   </a>
                 )}
               </motion.div>

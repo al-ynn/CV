@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import api, { formatApiError } from "../lib/api";
 import { useContent } from "../lib/content";
 import { Field, StatusBadge, getPath } from "./fields";
-import { Plus, Search, Copy, Archive, ArchiveRestore, Trash2, ArrowUp, ArrowDown, ExternalLink, RotateCcw } from "lucide-react";
+import { Plus, Search, Copy, Archive, ArchiveRestore, Trash2, ArrowUp, ArrowDown, ExternalLink, RotateCcw, Pencil } from "lucide-react";
 
 const FILTERS = ["ALL", "PUBLISHED", "DRAFT", "HIDDEN", "ARCHIVED"];
 
@@ -50,17 +50,22 @@ export default function CollectionPage({ schema, name }) {
     setDirty(false);
   };
 
-  const validate = () => {
+  const validate = (targetStatus, enforcePublishRequirements = false) => {
     const errs = {};
     schema.fields.forEach((f) => {
       if (f.required && !String(getPath(draft, f.key) ?? "").trim()) errs[f.key] = `${f.label} is required.`;
+      if (f.exactLength && targetStatus === "published" && enforcePublishRequirements && (getPath(draft, f.key) || []).length !== f.exactLength) {
+        errs[f.key] = `Please upload ${f.exactLength} project screenshots before publishing.`;
+      }
     });
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const save = async (statusOverride) => {
-    if (!validate()) return;
+    const targetStatus = statusOverride || draft.status;
+    const enforcePublishRequirements = statusOverride === "published" || editing === "new";
+    if (!validate(targetStatus, enforcePublishRequirements)) return;
     const doc = { ...draft };
     if (statusOverride) doc.status = statusOverride;
     if (name === "projects" && !doc.slug && doc.title) {
@@ -259,8 +264,14 @@ export default function CollectionPage({ schema, name }) {
                 {item.updated_at ? new Date(item.updated_at).toLocaleDateString() : "—"}
               </span>
               <div className="flex gap-1.5">
+                {!item.archived && (
+                  <button onClick={() => openEditor(item)} aria-label={`Edit ${item.title || item.name}`} title="Edit"
+                    data-testid={`${name}-edit-${item.id}`} className="h-9 px-3 inline-flex items-center gap-2 border border-line text-ink2 hover:text-violet hover:border-violet">
+                    <Pencil size={12} /><span className="hidden xl:inline font-mono text-[9px] tracking-[0.12em] uppercase">Edit</span>
+                  </button>
+                )}
                 <button onClick={() => act(() => api.post(`/admin/collection/${name}/${item.id}/duplicate`))} aria-label="Duplicate"
-                  data-testid={`${name}-dup-${item.id}`} className="p-2 border border-line text-ink3 hover:text-violet hover:border-violet">
+                  title="Duplicate" data-testid={`${name}-dup-${item.id}`} className="h-9 w-9 grid place-items-center border border-line text-ink3 hover:text-violet hover:border-violet">
                   <Copy size={12} />
                 </button>
                 {item.archived ? (
@@ -270,13 +281,13 @@ export default function CollectionPage({ schema, name }) {
                       <ArchiveRestore size={12} />
                     </button>
                     <button onClick={() => hardDelete(item)} aria-label="Delete permanently"
-                      className="p-2 border border-line text-pk hover:border-pk">
+                      title="Delete permanently" className="h-9 w-9 grid place-items-center border border-line text-pk hover:border-pk">
                       <Trash2 size={12} />
                     </button>
                   </>
                 ) : (
                   <button onClick={() => archive(item)} aria-label="Archive" data-testid={`${name}-archive-${item.id}`}
-                    className="p-2 border border-line text-ink3 hover:text-amb hover:border-amb">
+                    title="Archive" className="h-9 w-9 grid place-items-center border border-line text-ink3 hover:text-amb hover:border-amb">
                     <Archive size={12} />
                   </button>
                 )}

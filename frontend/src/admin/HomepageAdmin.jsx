@@ -83,6 +83,18 @@ export default function HomepageAdmin() {
       }));
   }, []);
 
+  useEffect(() => {
+    if (!cfg) return;
+    const ids = cfg.services?.ids || [];
+    const isLegacy = ids.length === 0 || (ids.includes("ecommerce") && ids.includes("backend"));
+    if (!isLegacy) return;
+    setCfg((current) => ({
+      ...current,
+      services: { ...current.services, ids: ["fullstack", "uiux", "infosystems", "backend"], max: 4 },
+    }));
+    setDirty(true);
+  }, [cfg]);
+
   const set = (path, value) => {
     const keys = path.split(".");
     setCfg((prev) => {
@@ -286,15 +298,27 @@ export default function HomepageAdmin() {
         <div className="grid sm:grid-cols-2 gap-4 mb-4">
           <L label="Section Heading"><Txt value={cfg.services?.heading} onChange={(v) => set("services.heading", v)} /></L>
           <L label="CTA Label"><Txt value={cfg.services?.ctaLabel} onChange={(v) => set("services.ctaLabel", v)} /></L>
-          <L label="Max Shown"><Txt value={cfg.services?.max} onChange={(v) => set("services.max", Number(v) || 7)} /></L>
+          <div><span className={labelCls}>Homepage Limit</span><div className="h-9 px-3 flex items-center border border-line bg-canvas font-mono text-xs text-ink3">4 featured services</div></div>
           <Check label="Show capability counts" checked={cfg.services?.showCount !== false} onChange={(v) => set("services.showCount", v)} />
         </div>
-        <span className={labelCls}>FEATURED CATEGORIES (empty = all, in CMS order)</span>
+        <span className={labelCls}>SELECT & ORDER — FOUR FEATURED SERVICE CATEGORIES</span>
         <div className="space-y-1.5 mt-2">
-          {refs.services.map((s) => (
-            <Check key={s.id} label={s.title} checked={(cfg.services?.ids || []).includes(s.id)}
-              onChange={(v) => set("services.ids", v ? [...(cfg.services?.ids || []), s.id] : (cfg.services?.ids || []).filter((x) => x !== s.id))}
-              testid={`hp-svc-${s.id}`} />
+          {(cfg.services?.ids || []).slice(0, 4).map((id, i) => {
+            const service = refs.services.find((item) => item.id === id);
+            if (!service) return null;
+            return <div key={id} className="flex items-center gap-2 border border-violet/40 bg-violet/5 px-3 py-2">
+              <span className="font-mono text-[10px] text-violet w-6">{i + 1}</span>
+              <span className="font-mono text-[11px] text-ink flex-1">{service.title}</span>
+              <RowControls i={i} len={Math.min((cfg.services?.ids || []).length, 4)}
+                onMove={(a, d) => set("services.ids", moveIn((cfg.services?.ids || []).slice(0, 4), a, d))}
+                onRemove={(a) => set("services.ids", (cfg.services?.ids || []).filter((_, j) => j !== a))} />
+            </div>;
+          })}
+          {(cfg.services?.ids || []).length < 4 && refs.services.filter((s) => !(cfg.services?.ids || []).includes(s.id)).map((s) => (
+            <button key={s.id} onClick={() => set("services.ids", [...(cfg.services?.ids || []), s.id].slice(0, 4))}
+              data-testid={`hp-svc-${s.id}`} className="w-full flex items-center gap-2 border border-line px-3 py-2 text-left hover:border-violet transition-colors">
+              <Plus size={11} className="text-ink3" /><span className="font-mono text-[11px] text-ink3">{s.title}</span>
+            </button>
           ))}
         </div>
       </div>

@@ -73,10 +73,10 @@ def default_homepage_config():
             ],
         },
         "services": {
-            "heading": "SERVICES",
+            "heading": "FEATURED SERVICES",
             "mode": "categories",
             "ids": [],
-            "max": 7,
+            "max": 4,
             "showCount": True,
             "ctaLabel": "VIEW ALL SERVICES →",
         },

@@ -145,7 +145,7 @@ export function WorkingStudentSection({ profile }) {
               <span className="font-mono text-[9px] tracking-[0.25em] uppercase" style={{ color: item.color }}>{item.tag}</span>
               <p className="mt-1.5 font-mono text-xs text-ink font-semibold">{item.value}</p>
             </Reveal>
-            <span className="font-mono text-xl text-ink3 shrink-0 max-lg:rotate-90 max-lg:mx-auto">+</span>
+            {i < load.length - 1 && <span className="font-mono text-xl text-ink3 shrink-0 max-lg:rotate-90 max-lg:mx-auto">+</span>}
           </div>
         ))}
         <div className="flex items-center gap-3 flex-[1.2]">
