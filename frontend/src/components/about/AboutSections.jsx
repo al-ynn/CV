@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 import { Reveal, TechLabel, LevelTag, StatusDot } from "../system/bits";
 import { periodOf } from "../../data/content";
@@ -66,6 +66,85 @@ export const photoByRole = (profile, role, fallbackIndex = 0) => {
   const photos = photosOf(profile);
   return photos.find((p) => p.role === role) || photos[fallbackIndex] || null;
 };
+// informal photos = everything that isn't the formal professional portrait
+export const informalPhotosOf = (profile) =>
+  photosOf(profile).filter((p) => p.role !== "Professional Portrait");
+
+// auto-sliding, swipeable photo carousel
+export function PhotoCarousel({ photos = [], ratio = "aspect-[4/5]", interval = 3800, className = "" }) {
+  const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const n = photos.length;
+  const startX = useRef(null);
+
+  useEffect(() => {
+    if (n <= 1 || paused) return;
+    const id = setInterval(() => setIdx((i) => (i + 1) % n), interval);
+    return () => clearInterval(id);
+  }, [n, paused, interval]);
+
+  if (!n) return null;
+  const go = (i) => setIdx((i + n) % n);
+  const onDown = (e) => { startX.current = (e.touches ? e.touches[0].clientX : e.clientX); };
+  const onUp = (e) => {
+    if (startX.current == null) return;
+    const endX = (e.changedTouches ? e.changedTouches[0].clientX : e.clientX);
+    const dx = endX - startX.current;
+    if (Math.abs(dx) > 40) go(dx < 0 ? idx + 1 : idx - 1);
+    startX.current = null;
+  };
+
+  return (
+    <div className={`panel overflow-hidden select-none ${className}`} data-testid="photo-carousel"
+      onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
+      onTouchStart={onDown} onTouchEnd={onUp} onMouseDown={onDown} onMouseUp={onUp}>
+      <div className={`relative ${ratio} overflow-hidden bg-canvas2`}>
+        {photos.map((p, i) => (
+          <motion.img
+            key={i}
+            src={p.url.startsWith("/") ? `${BACKEND}${p.url}` : p.url}
+            alt={p.alt || p.caption || "About photo"}
+            loading={i === 0 ? "eager" : "lazy"}
+            draggable={false}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: `${p.focalX ?? 50}% ${p.focalY ?? 50}%` }}
+            initial={false}
+            animate={{ opacity: i === idx ? 1 : 0, scale: i === idx ? 1 : 1.03 }}
+            transition={{ duration: 0.7, ease: "easeInOut" }}
+          />
+        ))}
+        {/* frame counter */}
+        <div className="absolute top-2 left-2 z-10 font-mono text-[9px] tracking-[0.2em] px-1.5 py-0.5 bg-black/55 text-white/85">
+          {String(idx + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
+        </div>
+        {/* caption */}
+        {photos[idx]?.caption && (
+          <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/80 to-transparent px-3 pt-8 pb-2.5">
+            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-white/90">{photos[idx].caption}</p>
+          </div>
+        )}
+        {/* arrows */}
+        {n > 1 && (
+          <>
+            <button aria-label="Previous photo" data-testid="carousel-prev" onClick={() => go(idx - 1)}
+              className="absolute left-1.5 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center bg-black/45 hover:bg-violet text-white font-mono text-sm transition-colors">‹</button>
+            <button aria-label="Next photo" data-testid="carousel-next" onClick={() => go(idx + 1)}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center bg-black/45 hover:bg-violet text-white font-mono text-sm transition-colors">›</button>
+          </>
+        )}
+      </div>
+      {/* dots */}
+      {n > 1 && (
+        <div className="flex items-center justify-center gap-1.5 py-2.5 border-t border-line">
+          {photos.map((_, i) => (
+            <button key={i} aria-label={`Go to photo ${i + 1}`} data-testid={`carousel-dot-${i}`} onClick={() => go(i)}
+              className={`h-1.5 rounded-full transition-all ${i === idx ? "w-5 bg-violet" : "w-1.5 bg-line hover:bg-ink3"}`} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ---------- section components ----------
 
@@ -253,12 +332,46 @@ export function BeyondCodeSection({ profile }) {
 export function OffClockSection({ profile }) {
   const g = profile.gaming || {};
   const s = profile.sports || {};
+  const gallery = (profile.sportsGallery || []).filter((p) => p.url);
   const hasSport = (s.items || []).length;
   const hasDigital = (g.digital || []).length;
-  if (!hasSport && !hasDigital) return null;
+  if (!hasSport && !hasDigital && !gallery.length) return null;
   return (
     <div>
       <TechLabel className="block mb-6">{g.heading || "OFF_CLOCK"}</TechLabel>
+      {gallery.length > 0 && (
+        <div className="mb-8" data-testid="sports-gallery">
+          <TechLabel className="block mb-4 text-grn">SPORTS_LOG // {String(gallery.length).padStart(2, "0")}</TechLabel>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-2xl">
+            {gallery.map((p, i) => (
+              <motion.figure
+                key={i}
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08, duration: 0.5 }}
+                className="group relative overflow-hidden border border-line bg-card"
+                data-testid={`sports-gallery-item-${i}`}
+              >
+                <div className="aspect-[3/4] overflow-hidden">
+                  <img
+                    src={p.url.startsWith("/") ? `${BACKEND}${p.url}` : p.url}
+                    alt={p.alt || p.sport || "Sports photo"}
+                    loading={i === 0 ? "eager" : "lazy"}
+                    className="w-full h-full object-cover grayscale-[0.2] transition-all duration-500 group-hover:grayscale-0 group-hover:scale-[1.04]"
+                    style={{ objectPosition: `${p.focalX ?? 50}% ${p.focalY ?? 50}%` }}
+                  />
+                </div>
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-3 pt-8 pb-2.5">
+                  <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-grn">{p.sport || "SPORT"}</p>
+                  {p.caption && <p className="font-mono text-[9px] tracking-[0.1em] text-white/70 mt-0.5 truncate">{p.caption}</p>}
+                </div>
+              </motion.figure>
+            ))}
+          </div>
+        </div>
+      )}
+      {(hasSport || hasDigital) && (
       <div className="grid sm:grid-cols-2 gap-px bg-line border border-line">
         <div className="bg-card p-6">
           <TechLabel className="block mb-4 text-grn">PHYSICAL</TechLabel>
@@ -278,6 +391,7 @@ export function OffClockSection({ profile }) {
           </ul>
         </div>
       </div>
+      )}
     </div>
   );
 }

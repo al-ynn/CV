@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { TechLabel, StatusDot } from "../system/bits";
 import {
-  AccentText, Photo, photosOf, photoByRole, renderSections, renderOnly,
+  AccentText, Photo, PhotoCarousel, photosOf, photoByRole, informalPhotosOf, renderSections, renderOnly,
   IntroSection, StorySection, SpecializationsSection, CareerGoalSection, StatsSection,
 } from "./AboutSections";
 
@@ -188,6 +188,7 @@ function StoryTemplate({ profile, ctx }) {
 
 function SystemProfileTemplate({ profile, ctx }) {
   const photos = photosOf(profile);
+  const informal = informalPhotosOf(profile);
   const s = ctx.settings || {};
   const stats = ctx.stats || {};
   const readout = [
@@ -207,7 +208,7 @@ function SystemProfileTemplate({ profile, ctx }) {
           <StatusDot />
         </div>
         <div className="grid lg:grid-cols-12">
-          <div className={`${photos.length ? "lg:col-span-7 border-b lg:border-b-0 lg:border-r" : "lg:col-span-12"} p-6 sm:p-10 border-line`}>
+          <div className={`${informal.length ? "lg:col-span-7 border-b lg:border-b-0 lg:border-r" : "lg:col-span-12"} p-6 sm:p-10 border-line`}>
             <div className="grid sm:grid-cols-2 gap-x-8 gap-y-6">
               {readout.map(([k, v], i) => (
                 <motion.div key={k} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
@@ -221,13 +222,10 @@ function SystemProfileTemplate({ profile, ctx }) {
               <IntroSection profile={profile} />
             </div>
           </div>
-          {photos.length > 0 && (
-            <div className="lg:col-span-5 p-6 sm:p-10">
-              <div className="grid grid-cols-2 gap-3">
-                {photos.slice(0, 4).map((photo, i) => (
-                  <Photo key={i} photo={photo} ratio="aspect-square" eager={i === 0} />
-                ))}
-              </div>
+          {informal.length > 0 && (
+            <div className="lg:col-span-5 p-6 sm:p-10 flex flex-col items-center lg:items-start">
+              <TechLabel className="block mb-3 text-grn">FIELD_LOG // AUTO</TechLabel>
+              <PhotoCarousel photos={informal} ratio="aspect-[4/5]" interval={2600} className="w-full max-w-[260px]" />
             </div>
           )}
         </div>

@@ -109,6 +109,13 @@ async def bootstrap():
     contact = singles.get("contact", {})
     socials = {k: v for k, v in (profile.get("socials") or {}).items() if v}
     availability = site.get("availability", "available")
+
+    about_prof = await db.about_profiles.find_one({"status": "published"}, {"_id": 0, "photos": 1})
+    portrait = ""
+    if about_prof:
+        photos = about_prof.get("photos") or []
+        port = next((ph for ph in photos if ph.get("role") == "Professional Portrait" and ph.get("url")), None)
+        portrait = (port or {}).get("url", "")
     settings = {
         "contactEmail": contact.get("email") or profile.get("contactEmail", ""),
         "contact": {
@@ -132,6 +139,7 @@ async def bootstrap():
         "copyright": site.get("copyright", ""),
         "fullName": profile.get("fullName", "Aleana Rose C. Amurao"),
         "title": profile.get("title", ""),
+        "portrait": portrait,
     }
     return {
         "settings": settings,

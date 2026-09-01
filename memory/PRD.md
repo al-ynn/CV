@@ -101,3 +101,15 @@ See /app/memory/test_credentials.md — admin@amurao.dev / AmuraoDev-2026!
 - Fix: set REACT_APP_BACKEND_URL to external preview endpoint (env `preview_endpoint`: https://b04cb3fe-b471-4891-b54e-b6ed0b7200e0.preview.emergentagent.com) and restarted frontend.
 - Uploaded backend.zip = identical backend code (CRLF + local venv only), no DB dump. Existing MongoDB (DB_NAME=cv) already seeded with real data.
 - Admin: /admin — admin@amurao.dev / AmuraoDev-2026!
+
+## 2026-06 — About photos added
+- Uploaded 4 user photos to Media Library (3 informal + 1 formal portrait) and placed on published About profile (id 1f470eb4..., template 4).
+  Order: Professional Portrait (anchor) → Working Student → Off_Clock → On Campus, face-focused focal points.
+- FIX: EMERGENT_LLM_KEY was missing from backend/.env → object storage init failed (400) → all media uploads broke. Added key; uploads work.
+- CRUD for photo placement already exists: Admin → About → PHOTOS tab (add/role/caption/alt/focal/reorder/remove → Save Draft → Publish).
+
+## 2026-06 — Sports gallery + carousel + portrait
+- Sports gallery: 3 photos (volleyball/futsal/badminton) on published About profile (sportsGallery array), rendered in OFF_CLOCK section. Admin CRUD in About → PHOTOS tab (SPORTS GALLERY panel).
+- Person Profile (template 4): informal photos now an auto-advancing carousel (PhotoCarousel in AboutSections.jsx, interval 2.6s, arrows/dots/counter/swipe, pause on hover). informalPhotosOf() = photos where role != "Professional Portrait".
+- Formal portrait: exposed in bootstrap settings.portrait (from published about profile's "Professional Portrait" photo); shown as mini pic in Footer; embedded top-right in CV PDF (resume.py build_resume_bytes portrait_bytes + get_portrait_bytes; get_resume_bytes regenerates fresh).
+- Sizing: carousel max-w-[260px], sports grid max-w-2xl (user requested smaller).

@@ -32,6 +32,15 @@ export default function Footer() {
       <div className="mx-auto max-w-[1440px] px-5 sm:px-8 pt-16 pb-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-6">
           <div className="lg:col-span-4">
+            {settings.portrait && (
+              <img
+                src={`${process.env.REACT_APP_BACKEND_URL}${settings.portrait}`}
+                alt="Aleana Amurao"
+                data-testid="footer-portrait"
+                className="w-16 h-16 mb-5 object-cover border border-line grayscale hover:grayscale-0 transition-all duration-500"
+                style={{ objectPosition: "50% 40%" }}
+              />
+            )}
             <div className="font-display text-4xl sm:text-5xl font-extrabold tracking-tight leading-none">
               ALEANA<br />AMURAO
             </div>

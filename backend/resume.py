@@ -2,6 +2,7 @@ from io import BytesIO
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.lib.colors import HexColor
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 from db import db
 from storage import put_object, get_object
@@ -69,7 +70,7 @@ def _wrap(text, width):
     return lines
 
 
-def build_resume_bytes() -> bytes:
+def build_resume_bytes(portrait_bytes: bytes | None = None) -> bytes:
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     W, H = A4
@@ -93,6 +94,21 @@ def build_resume_bytes() -> bytes:
         c.setFillColor(VIOLET)
         c.drawString(x, y, text.upper())
         y -= 4.5 * mm
+
+    # optional portrait, top-right
+    if portrait_bytes:
+        try:
+            ps = 26 * mm
+            px, py = W - 18 * mm - ps, H - 18 * mm - ps + 4 * mm
+            c.saveState()
+            c.setStrokeColor(LINE)
+            c.setLineWidth(0.7)
+            c.rect(px, py, ps, ps, stroke=1, fill=0)
+            c.drawImage(ImageReader(BytesIO(portrait_bytes)), px, py, ps, ps,
+                        preserveAspectRatio=True, anchor="c", mask="auto")
+            c.restoreState()
+        except Exception:
+            pass
 
     c.setFont("Courier", 7.5)
     c.setFillColor(VIOLET)
@@ -142,11 +158,31 @@ def build_resume_bytes() -> bytes:
     return buf.getvalue()
 
 
+async def get_portrait_bytes() -> bytes | None:
+    prof = await db.about_profiles.find_one({"status": "published"}, {"_id": 0, "photos": 1})
+    if not prof:
+        return None
+    photos = prof.get("photos") or []
+    port = next((ph for ph in photos if ph.get("role") == "Professional Portrait" and ph.get("url")), None)
+    if not port:
+        return None
+    media_id = port["url"].rstrip("/").split("/")[-1]
+    media = await db.media.find_one({"id": media_id, "is_deleted": {"$ne": True}}, {"_id": 0})
+    if not media:
+        return None
+    try:
+        data, _ = await get_object(media["storage_path"])
+        return data
+    except Exception:
+        return None
+
+
 async def ensure_generated_resume():
     existing = await db.files.find_one({"kind": "resume_generated", "is_deleted": False})
     if existing:
         return
-    data = build_resume_bytes()
+    portrait = await get_portrait_bytes()
+    data = build_resume_bytes(portrait)
     result = await put_object(GENERATED_PATH, data, "application/pdf")
     await db.files.update_one(
         {"kind": "resume_generated"},
@@ -161,12 +197,9 @@ async def get_resume_bytes() -> bytes:
     if custom:
         data, _ = await get_object(custom["storage_path"])
         return data
-    gen = await db.files.find_one({"kind": "resume_generated", "is_deleted": False})
-    if not gen:
-        await ensure_generated_resume()
-        gen = await db.files.find_one({"kind": "resume_generated", "is_deleted": False})
-    data, _ = await get_object(gen["storage_path"])
-    return data
+    # regenerate fresh so the CV always reflects the current portrait
+    portrait = await get_portrait_bytes()
+    return build_resume_bytes(portrait)
 
 
 async def save_custom_resume(content: bytes, filename: str) -> dict:
