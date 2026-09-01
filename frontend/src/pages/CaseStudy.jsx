@@ -96,7 +96,11 @@ export default function CaseStudy() {
     p.githubUrl && { href: p.githubUrl, label: "GITHUB REPOSITORY", icon: Github, testid: "case-link-githubUrl" },
   ].filter(Boolean);
 
-  return <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-16 sm:py-24">
+  return <div className="relative overflow-hidden">
+    <div aria-hidden="true" className="bg-aurora absolute inset-x-0 top-0 h-[34rem] pointer-events-none" />
+    <span aria-hidden="true" className="orb orb-violet orb-float-a hidden md:block" style={{ width: "20rem", height: "20rem", top: "-5rem", left: "-5rem" }} />
+    <span aria-hidden="true" className="orb orb-cyan orb-float-b hidden lg:block" style={{ width: "16rem", height: "16rem", top: "8rem", right: "-4rem" }} />
+    <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-16 sm:py-24 relative">
     <Link to="/work" data-testid="case-back" className="font-mono text-[10px] tracking-[0.2em] uppercase text-ink3 hover:text-violet transition-colors">← PROJECT ARCHIVE</Link>
     <header className="mt-8 mb-12">
       <div className="flex flex-wrap items-center gap-4 mb-5"><span className="font-mono text-[11px] tracking-[0.3em] text-violet">PROJECT / {p.num}</span><LevelTag level={p.disclosure === "PUBLIC" ? "FAMILIAR" : p.disclosure === "LIMITED DISCLOSURE" ? "WORKING KNOWLEDGE" : "LEARNING"} /></div>
@@ -127,6 +131,10 @@ export default function CaseStudy() {
       {next && <Link to={`/work/${next.slug}`} className="panel panel-hover p-5 text-right group"><TechLabel>NEXT PROJECT →</TechLabel><span className="block mt-2 font-display text-xl font-bold text-ink group-hover:text-violet">{next.title}</span></Link>}
     </nav>}
 
-    <div className="mt-16 panel p-8 sm:p-10 text-center bg-grid"><TechLabel className="block mb-4">NEXT STEP</TechLabel><h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">NEED A SYSTEM LIKE THIS?</h2><Link to="/contact" data-testid="case-contact-cta" className="mt-6 inline-flex h-11 items-center px-7 bg-violet font-mono text-[11px] tracking-[0.2em] uppercase font-semibold hover:opacity-90" style={{ color: "var(--bg)" }}>Start a Project →</Link></div>
+    <div className="mt-16 panel p-8 sm:p-10 text-center bg-grid bg-aurora-cta relative overflow-hidden">
+      <span aria-hidden="true" className="orb orb-violet orb-float-c hidden sm:block" style={{ width: "14rem", height: "14rem", top: "-4rem", right: "-3rem" }} />
+      <div className="relative"><TechLabel className="block mb-4">NEXT STEP</TechLabel><h2 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">NEED A SYSTEM <span className="gradient-text">LIKE THIS?</span></h2><Link to="/contact" data-testid="case-contact-cta" className="mt-6 inline-flex h-11 items-center px-7 font-mono text-[11px] tracking-[0.2em] uppercase font-semibold hover:opacity-90 transition-opacity" style={{ color: "var(--bg)", background: "linear-gradient(90deg, var(--violet), color-mix(in srgb, var(--violet) 55%, var(--pink)))" }}>Start a Project →</Link></div>
+    </div>
+    </div>
   </div>;
 }

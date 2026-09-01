@@ -389,3 +389,37 @@
 @media (pointer: coarse), (prefers-reduced-motion: reduce), (max-width: 767px) {
   .cursor-glow { display: none; }
 }
+
+/* Timeline connector beams — gradient rail + traveling pulse (transform-only). */
+.timeline-beam {
+  overflow: hidden;
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, var(--violet) 45%, transparent),
+    color-mix(in srgb, var(--cyan) 30%, transparent));
+}
+.timeline-beam::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 3.5rem;
+  top: 0;
+  background: linear-gradient(to bottom, transparent, var(--violet), transparent);
+  animation: beam-fall 4.5s linear infinite;
+}
+.timeline-beam-amb {
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, var(--amber) 45%, transparent),
+    color-mix(in srgb, var(--pink) 25%, transparent));
+}
+.timeline-beam-amb::after {
+  background: linear-gradient(to bottom, transparent, var(--amber), transparent);
+  animation-duration: 5.5s;
+}
+@keyframes beam-fall {
+  from { transform: translateY(-3.5rem); }
+  to { transform: translateY(60rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .timeline-beam::after { animation: none; display: none; }
+}

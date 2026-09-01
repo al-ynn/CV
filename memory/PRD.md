@@ -75,6 +75,10 @@ aesthetic + polished light mode. Concept: "a résumé encoded into a software in
   desktop fine-pointer only, disabled on touch / reduced-motion / ≤2-core devices
 - Hero Terminal: live typing deployment-log chip inside System Profile panel
   (DeployLog in Home.jsx, loops 4 log lines; static final line under reduced motion)
+- Case Study polish: aurora band + orbs behind header, gradient-text accent and
+  gradient-fill CTA on the closing panel (CaseStudy.jsx)
+- Experience git-log timeline: deterministic commit-hash prefixes, "$ git log --graph"
+  chips, animated gradient connector beams (.timeline-beam / -amb, reduced-motion safe)
 
 ## Pending / Notes
 - Owner notification email + public contact email + social URLs: set in Admin →
