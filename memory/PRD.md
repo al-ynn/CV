@@ -95,3 +95,9 @@ aesthetic + polished light mode. Concept: "a résumé encoded into a software in
 
 ## Credentials
 See /app/memory/test_credentials.md — admin@amurao.dev / AmuraoDev-2026!
+
+## 2026-06 — Preview URL fix
+- Root cause of "page not viewing properly": frontend/.env had REACT_APP_BACKEND_URL=http://localhost:8001 (set during a prior fork). Works inside pod, fails from external browser.
+- Fix: set REACT_APP_BACKEND_URL to external preview endpoint (env `preview_endpoint`: https://b04cb3fe-b471-4891-b54e-b6ed0b7200e0.preview.emergentagent.com) and restarted frontend.
+- Uploaded backend.zip = identical backend code (CRLF + local venv only), no DB dump. Existing MongoDB (DB_NAME=cv) already seeded with real data.
+- Admin: /admin — admin@amurao.dev / AmuraoDev-2026!
