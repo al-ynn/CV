@@ -342,7 +342,7 @@ export function OffClockSection({ profile }) {
       {gallery.length > 0 && (
         <div className="mb-8" data-testid="sports-gallery">
           <TechLabel className="block mb-4 text-grn">SPORTS_LOG // {String(gallery.length).padStart(2, "0")}</TechLabel>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-2xl">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {gallery.map((p, i) => (
               <motion.figure
                 key={i}
@@ -353,7 +353,7 @@ export function OffClockSection({ profile }) {
                 className="group relative overflow-hidden border border-line bg-card"
                 data-testid={`sports-gallery-item-${i}`}
               >
-                <div className="aspect-[3/4] overflow-hidden">
+                <div className="aspect-[4/5] overflow-hidden">
                   <img
                     src={p.url.startsWith("/") ? `${BACKEND}${p.url}` : p.url}
                     alt={p.alt || p.sport || "Sports photo"}

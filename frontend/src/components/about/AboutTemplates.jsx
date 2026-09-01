@@ -223,9 +223,11 @@ function SystemProfileTemplate({ profile, ctx }) {
             </div>
           </div>
           {informal.length > 0 && (
-            <div className="lg:col-span-5 p-6 sm:p-10 flex flex-col items-center lg:items-start">
-              <TechLabel className="block mb-3 text-grn">FIELD_LOG // AUTO</TechLabel>
-              <PhotoCarousel photos={informal} ratio="aspect-[4/5]" interval={2600} className="w-full max-w-[260px]" />
+            <div className="lg:col-span-5 p-6 sm:p-10 flex flex-col justify-center items-center">
+              <div className="w-full max-w-[300px]">
+                <TechLabel className="block mb-3 text-grn">FIELD_LOG // AUTO</TechLabel>
+                <PhotoCarousel photos={informal} ratio="aspect-[4/5]" interval={2600} className="w-full" />
+              </div>
             </div>
           )}
         </div>
