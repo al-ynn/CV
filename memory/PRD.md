@@ -113,3 +113,8 @@ See /app/memory/test_credentials.md — admin@amurao.dev / AmuraoDev-2026!
 - Person Profile (template 4): informal photos now an auto-advancing carousel (PhotoCarousel in AboutSections.jsx, interval 2.6s, arrows/dots/counter/swipe, pause on hover). informalPhotosOf() = photos where role != "Professional Portrait".
 - Formal portrait: exposed in bootstrap settings.portrait (from published about profile's "Professional Portrait" photo); shown as mini pic in Footer; embedded top-right in CV PDF (resume.py build_resume_bytes portrait_bytes + get_portrait_bytes; get_resume_bytes regenerates fresh).
 - Sizing: carousel max-w-[260px], sports grid max-w-2xl (user requested smaller).
+
+## 2026-06 — About page visual polish
+- Added CountUp component (scroll-triggered number count-up) → StatsSection numbers animate 0→value + animated violet underline bar per stat.
+- Added Marquee component (infinite framer-motion x-scroll) → InterestsSection now a dual-row kinetic marquee (opposite directions, accent + neutral rows, edge fades).
+- Fixed layout: person-profile carousel vertically centered (max-w-300px); sports gallery full-width even 3-up band aspect-[4/5].

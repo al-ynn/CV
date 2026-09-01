@@ -146,6 +146,55 @@ export function PhotoCarousel({ photos = [], ratio = "aspect-[4/5]", interval = 
   );
 }
 
+// animated count-up number (fires when scrolled into view)
+export function CountUp({ value = 0, duration = 1500, pad = 2 }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-40px" });
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!inView) return;
+    let raf;
+    const start = performance.now();
+    const tick = (t) => {
+      const p = Math.min(1, (t - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setN(Math.round(eased * value));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, value, duration]);
+  return <span ref={ref} className="tabular-nums">{String(n).padStart(pad, "0")}</span>;
+}
+
+// infinite kinetic marquee band
+export function Marquee({ items = [], reverse = false, speed = 32, accent = false }) {
+  if (!items.length) return null;
+  const doubled = [...items, ...items];
+  return (
+    <div className="overflow-hidden py-1" aria-hidden="true">
+      <motion.div
+        className="flex gap-3 w-max"
+        animate={{ x: reverse ? ["-50%", "0%"] : ["0%", "-50%"] }}
+        transition={{ duration: speed, ease: "linear", repeat: Infinity }}
+      >
+        {doubled.map((it, i) => (
+          <span
+            key={i}
+            className={`shrink-0 px-4 py-2 border font-mono text-[11px] tracking-[0.15em] uppercase whitespace-nowrap ${
+              accent
+                ? "border-violet/40 text-violet bg-violet/5"
+                : "border-line text-ink2 bg-card"
+            }`}
+          >
+            {it}
+          </span>
+        ))}
+      </motion.div>
+    </div>
+  );
+}
+
 // ---------- section components ----------
 
 export function IntroSection({ profile }) {
@@ -399,15 +448,18 @@ export function OffClockSection({ profile }) {
 export function InterestsSection({ profile }) {
   const items = profile.interests || [];
   if (!items.length) return null;
+  const mid = Math.ceil(items.length / 2);
+  const rowA = items.slice(0, mid);
+  const rowB = items.slice(mid).length ? items.slice(mid) : items;
   return (
     <div>
       <TechLabel className="block mb-5">INTERESTS.INDEX</TechLabel>
-      <div className="flex flex-wrap gap-2">
-        {items.map((it) => (
-          <span key={it} className="px-3 py-1.5 border border-line font-mono text-[10px] tracking-[0.1em] uppercase text-ink2 hover:border-violet hover:text-violet transition-colors cursor-default">
-            {it}
-          </span>
-        ))}
+      <div className="relative panel p-4 space-y-2 overflow-hidden">
+        {/* edge fades */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-16 z-10 bg-gradient-to-r from-card to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-16 z-10 bg-gradient-to-l from-card to-transparent" />
+        <Marquee items={rowA} speed={34} accent />
+        <Marquee items={rowB} speed={40} reverse />
       </div>
     </div>
   );
@@ -485,13 +537,20 @@ export function StatsSection({ profile, ctx }) {
   if (!active.length) return null;
   return (
     <div className={`grid gap-px bg-line border border-line ${active.length > 2 ? "grid-cols-2 lg:grid-cols-" + Math.min(active.length, 5) : "grid-cols-2"}`}>
-      {active.map(([key, code, label]) => (
-        <div key={key} className="bg-card p-6">
+      {active.map(([key, code, label], i) => (
+        <div key={key} className="group relative bg-card p-6 overflow-hidden hover:bg-canvas2/40 transition-colors">
           <TechLabel className="block mb-3">{code}</TechLabel>
-          <div className="font-mono text-3xl sm:text-4xl font-bold text-violet tabular-nums">
-            {key === "experience" ? stats.experienceSince : String(stats[key] ?? 0).padStart(2, "0")}
+          <div className="font-mono text-3xl sm:text-5xl font-bold text-violet tabular-nums">
+            {key === "experience" ? stats.experienceSince : <CountUp value={stats[key] ?? 0} />}
           </div>
           <div className="mt-2 font-mono text-[9px] tracking-[0.2em] uppercase text-ink3">{label}</div>
+          <motion.span
+            className="absolute left-0 bottom-0 h-0.5 bg-violet"
+            initial={{ width: 0 }}
+            whileInView={{ width: "100%" }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.9, delay: 0.2 + i * 0.1, ease: "easeOut" }}
+          />
         </div>
       ))}
     </div>
