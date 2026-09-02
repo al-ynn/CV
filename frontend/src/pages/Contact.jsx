@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import api, { formatApiError } from "../lib/api";
 import { useContent } from "../lib/content";
@@ -7,10 +7,6 @@ import useSeo from "../lib/useSeo";
 import { TechLabel, StatusDot } from "../components/system/bits";
 import DirectChannels from "../components/ContactChannels";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
-
-const DEFAULT_TYPES = ["Full-Stack Web Development", "UI/UX & Product Design", "E-Commerce Development",
-  "Backend, API & Database", "Business / Information System", "WordPress / CMS", "Development Support", "Something else"];
-const DEFAULT_BUDGETS = ["Below ₱10K", "₱10K–₱25K", "₱25K–₱50K", "₱50K–₱100K", "₱100K+", "Not sure yet"];
 
 const inputCls =
   "w-full h-11 px-4 bg-card border border-line font-mono text-xs text-ink placeholder:text-ink3 focus:border-violet focus:outline-none transition-colors";
@@ -20,11 +16,12 @@ export default function Contact() {
   const { settings, estimator } = useContent();
   useSeo("Contact");
   const location = useLocation();
+  const navigate = useNavigate();
   const brief = location.state?.brief;
   const interestedService = location.state?.service;
 
-  const projectTypes = estimator.projectTypes?.length ? estimator.projectTypes : DEFAULT_TYPES;
-  const budgetOptions = estimator.budgetOptions?.length ? estimator.budgetOptions : DEFAULT_BUDGETS;
+  const projectTypes = estimator.projectTypes || [];
+  const budgetOptions = estimator.budgetOptions || [];
   const serviceType = interestedService ? projectTypes.find((type) => {
     const service = interestedService.toLowerCase();
     const candidate = type.toLowerCase();
@@ -74,7 +71,7 @@ export default function Contact() {
     }
     try {
       await api.post("/inquiries", { ...form, brief: brief || undefined });
-      setPhase("done");
+      navigate("/contact/sent", { replace: true, state: { submitted: true } });
     } catch (err) {
       setError(formatApiError(err.response?.data?.detail));
       setPhase("error");

@@ -210,7 +210,7 @@ async def upload_media(file: UploadFile = File(...), alt: str = "", admin=Depend
     if len(content) > MAX_UPLOAD:
         raise HTTPException(status_code=400, detail="File too large (max 8 MB)")
     media_id = str(uuid.uuid4())
-    result = await put_object(f"amurao-dev/media/{uuid.uuid4().hex}{ALLOWED_MIME[file.content_type]}", content, file.content_type)
+    result = await put_object(f"media/{uuid.uuid4().hex}{ALLOWED_MIME[file.content_type]}", content, file.content_type)
     doc = {
         "id": media_id,
         "storage_path": result["path"],

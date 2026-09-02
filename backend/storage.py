@@ -1,47 +1,44 @@
-import os
 import asyncio
-import logging
-import requests
+import mimetypes
+import os
+from pathlib import Path
 
-logger = logging.getLogger(__name__)
 
-STORAGE_BASE = (os.environ.get("INTEGRATION_PROXY_URL") or "").strip() or "https://integrations.emergentagent.com"
-STORAGE_URL = STORAGE_BASE.rstrip("/") + "/objstore/api/v1/storage"
-EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY")
-APP_NAME = "amurao-dev"
-
-storage_key = None
+ROOT = Path(__file__).resolve().parent
+UPLOAD_ROOT = Path(os.environ.get("LOCAL_UPLOAD_ROOT", ROOT / "uploads")).resolve()
 
 
 def init_storage(force: bool = False):
-    global storage_key
-    if storage_key and not force:
-        return storage_key
-    resp = requests.post(f"{STORAGE_URL}/init", json={"emergent_key": EMERGENT_KEY}, timeout=30)
-    resp.raise_for_status()
-    storage_key = resp.json()["storage_key"]
-    return storage_key
+    """Initialize persistent local storage while preserving the storage API."""
+    del force
+    (UPLOAD_ROOT / "media").mkdir(parents=True, exist_ok=True)
+    (UPLOAD_ROOT / "resumes").mkdir(parents=True, exist_ok=True)
+    return str(UPLOAD_ROOT)
+
+
+def _safe_path(path: str) -> Path:
+    relative = Path(path.replace("\\", "/").lstrip("/"))
+    target = (UPLOAD_ROOT / relative).resolve()
+    if target != UPLOAD_ROOT and UPLOAD_ROOT not in target.parents:
+        raise ValueError("Invalid storage path")
+    return target
 
 
 def _put(path: str, data: bytes, content_type: str) -> dict:
-    key = init_storage()
-    resp = requests.put(
-        f"{STORAGE_URL}/objects/{path}",
-        headers={"X-Storage-Key": key, "Content-Type": content_type},
-        data=data, timeout=120,
-    )
-    resp.raise_for_status()
-    return resp.json()
+    target = _safe_path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_suffix(target.suffix + ".tmp")
+    temporary.write_bytes(data)
+    os.replace(temporary, target)
+    return {"path": target.relative_to(UPLOAD_ROOT).as_posix(), "size": len(data), "content_type": content_type}
 
 
 def _get(path: str) -> tuple[bytes, str]:
-    key = init_storage()
-    resp = requests.get(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": key}, timeout=60)
-    if resp.status_code == 404:
-        init_storage(force=True)
-        resp = requests.get(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": storage_key}, timeout=60)
-    resp.raise_for_status()
-    return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
+    target = _safe_path(path)
+    if not target.is_file():
+        raise FileNotFoundError(path)
+    content_type = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
+    return target.read_bytes(), content_type
 
 
 async def put_object(path: str, data: bytes, content_type: str) -> dict:

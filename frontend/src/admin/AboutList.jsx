@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import api, { formatApiError } from "../lib/api";
 import { ABOUT_TEMPLATES, STATUS_BADGE, timeAgo } from "./aboutShared";
-import { Plus, Search, Copy, Archive, Trash2, ArchiveRestore, ExternalLink } from "lucide-react";
+import { Plus, Search, Copy, Archive, Trash2, ArchiveRestore, ExternalLink, Pencil } from "lucide-react";
+import { AdminConfirm, AdminToast } from "./AdminFeedback";
 
 const FILTERS = ["ALL", "PUBLISHED", "DRAFT", "ARCHIVED", "TRASH"];
 
@@ -9,7 +10,9 @@ export default function AboutList({ onEdit, onNew }) {
   const [items, setItems] = useState(null);
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
-  const [msg, setMsg] = useState("");
+  const [notification, setNotification] = useState(null);
+  const [confirm, setConfirm] = useState(null);
+  const [busy, setBusy] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: "", template: 4, duplicateFrom: "" });
 
@@ -23,18 +26,28 @@ export default function AboutList({ onEdit, onNew }) {
     return out;
   }, [items, filter, search]);
 
+  const notify = (message, type = "success", title) => setNotification({ message, type, title });
+
   const act = async (fn, okMsg) => {
     try {
       await fn();
-      if (okMsg) setMsg(okMsg);
-      load();
+      if (okMsg) notify(okMsg);
+      await load();
     } catch (err) {
-      setMsg(formatApiError(err.response?.data?.detail));
+      notify(formatApiError(err.response?.data?.detail), "error", "Action failed");
     }
   };
 
+  const runConfirmed = async () => {
+    if (!confirm) return;
+    setBusy(true);
+    await act(confirm.action, confirm.success);
+    setBusy(false);
+    setConfirm(null);
+  };
+
   const create = async () => {
-    if (!form.name.trim()) return setMsg("Profile name is required.");
+    if (!form.name.trim()) return notify("Profile name is required.", "warning", "Missing information");
     try {
       const { data } = await api.post("/admin/about/profiles", {
         name: form.name, template: form.template, duplicateFrom: form.duplicateFrom || undefined,
@@ -42,7 +55,7 @@ export default function AboutList({ onEdit, onNew }) {
       setCreating(false);
       onEdit(data.id);
     } catch (err) {
-      setMsg(formatApiError(err.response?.data?.detail));
+      notify(formatApiError(err.response?.data?.detail), "error", "Could not create profile");
     }
   };
 
@@ -81,7 +94,8 @@ export default function AboutList({ onEdit, onNew }) {
         </div>
       </div>
 
-      {msg && <p className={`mb-4 font-mono text-xs ${msg.startsWith("✓") ? "text-grn" : "text-pk"}`}>{msg}</p>}
+      <AdminToast notification={notification} onClose={() => setNotification(null)} />
+      <AdminConfirm open={!!confirm} {...confirm} busy={busy} onCancel={() => !busy && setConfirm(null)} onConfirm={runConfirmed} />
 
       {creating && (
         <div className="panel p-5 mb-6 space-y-4" data-testid="about-create-form">
@@ -152,8 +166,7 @@ export default function AboutList({ onEdit, onNew }) {
                         <ArchiveRestore size={12} />
                       </button>
                       <button
-                        onClick={() => window.confirm(`DELETE PERMANENTLY?\n\n${p.name}\n\nThis cannot be undone. Shared media files are kept.`) &&
-                          act(() => api.delete(`/admin/about/profiles/${p.id}/permanent`), "✓ Permanently deleted")}
+                        onClick={() => setConfirm({ title: "Delete profile permanently?", item: p.name, description: "This action cannot be undone. Shared media files will be kept in the media library.", confirmLabel: "Delete permanently", danger: true, action: () => api.delete(`/admin/about/profiles/${p.id}/permanent`), success: "Profile permanently deleted." })}
                         aria-label="Delete permanently" data-testid={`about-purge-${p.id}`}
                         className="p-2 border border-line text-pk hover:border-pk">
                         <Trash2 size={12} />
@@ -161,6 +174,10 @@ export default function AboutList({ onEdit, onNew }) {
                     </>
                   ) : (
                     <>
+                      <button onClick={() => onEdit(p.id)} aria-label={`Edit ${p.name}`} data-testid={`about-edit-${p.id}`}
+                        className="h-8 px-3 border border-line font-mono text-[9px] tracking-[0.15em] uppercase text-ink2 hover:text-violet hover:border-violet inline-flex items-center gap-1.5">
+                        <Pencil size={11} /> Edit
+                      </button>
                       {p.status !== "published" && (
                         <button onClick={() => act(() => api.post(`/admin/about/profiles/${p.id}/publish`), "✓ Published — now live at /about")}
                           data-testid={`about-publish-${p.id}`}
@@ -173,15 +190,14 @@ export default function AboutList({ onEdit, onNew }) {
                         className="p-2 border border-line text-ink3 hover:text-violet hover:border-violet">
                         <Copy size={12} />
                       </button>
-                      {p.status !== "archived" && p.status !== "published" && (
-                        <button onClick={() => act(() => api.post(`/admin/about/profiles/${p.id}/archive`))} aria-label="Archive"
+                      {p.status !== "archived" && (
+                        <button onClick={() => setConfirm({ title: "Archive this profile?", item: p.name, description: "The profile will be hidden from active drafts and can be restored later.", confirmLabel: "Archive profile", action: () => api.post(`/admin/about/profiles/${p.id}/archive`), success: "Profile archived." })} aria-label="Archive"
                           className="p-2 border border-line text-ink3 hover:text-amb hover:border-amb">
                           <Archive size={12} />
                         </button>
                       )}
                       <button
-                        onClick={() => window.confirm(`MOVE TO TRASH?\n\n${p.name}\n\nKept for 30 days, then permanently deleted.`) &&
-                          act(() => api.delete(`/admin/about/profiles/${p.id}`), "✓ Moved to trash (30-day retention)")}
+                        onClick={() => setConfirm({ title: "Move profile to trash?", item: p.name, description: "The profile will be kept in Trash for 30 days before permanent deletion. You can restore it during that period.", confirmLabel: "Move to trash", danger: true, action: () => api.delete(`/admin/about/profiles/${p.id}`), success: "Profile moved to Trash. It will be retained for 30 days." })}
                         aria-label="Move to trash" data-testid={`about-trash-${p.id}`}
                         className="p-2 border border-line text-pk hover:border-pk">
                         <Trash2 size={12} />

@@ -416,6 +416,8 @@ SEED_SINGLETONS = {
     "profile": {
         "fullName": "Aleana Rose C. Amurao",
         "title": "Full-Stack Developer · Systems Developer · UI/UX Designer",
+        "resumeTitle": "Full-Stack Developer · Systems Developer · UI/UX Designer · Freelance Technology Partner",
+        "resumeSummary": "BS Information Technology student at Central Luzon State University working as a freelance full-stack developer. Experienced in developing real-world systems: e-commerce platforms, information systems, business applications, APIs, databases, administrative dashboards, and client-facing websites — from planning and interface to deployment and documentation.",
         "contactEmail": "", "phone": "", "location": "Philippines",
         "shortBio": "", "longBio": "", "photo": "", "logo": "",
         "socials": {"github": "", "linkedin": "", "behance": "", "dribbble": "", "facebook": "", "instagram": ""},

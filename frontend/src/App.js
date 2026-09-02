@@ -17,6 +17,7 @@ import Journey from "@/pages/Journey";
 import Experience from "@/pages/Experience";
 import Resume from "@/pages/Resume";
 import Contact from "@/pages/Contact";
+import ContactSuccess from "@/pages/ContactSuccess";
 import NotFound from "@/pages/NotFound";
 import AboutPreview from "@/pages/AboutPreview";
 import HomePreview from "@/pages/HomePreview";
@@ -93,6 +94,7 @@ function App() {
                 <Route path="/journey" element={<Navigate to="/experience" replace />} />
                 <Route path="/resume" element={<Resume />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/contact/sent" element={<ContactSuccess />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
               <Route path="/about-preview/:token" element={<AboutPreview />} />

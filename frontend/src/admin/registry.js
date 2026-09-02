@@ -243,6 +243,8 @@ export const SINGLETON_SCHEMAS = {
       { key: "phone", label: "Phone (blank = hidden)", type: "text" },
       { key: "location", label: "Location", type: "text" },
       { key: "shortBio", label: "Short Bio", type: "textarea", rows: 2 },
+      { key: "resumeTitle", label: "Resume Title", type: "text" },
+      { key: "resumeSummary", label: "Resume Profile Summary", type: "textarea", rows: 4 },
       { key: "photo", label: "Profile Photo", type: "image" },
       { type: "section", label: "SOCIAL LINKS (blank = hidden publicly)" },
       { key: "socials.github", label: "GitHub", type: "text" },

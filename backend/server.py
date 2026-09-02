@@ -17,7 +17,7 @@ from starlette.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 
-from db import db, client
+from db import db, client, verify_database_connection
 from auth import (
     create_access_token, verify_password, hash_password, get_current_admin, seed_admin,
     create_indexes, check_lockout, record_failed_attempt, clear_attempts,
@@ -139,6 +139,8 @@ async def bootstrap():
         "copyright": site.get("copyright", ""),
         "fullName": profile.get("fullName", "Aleana Rose C. Amurao"),
         "title": profile.get("title", ""),
+        "resumeTitle": profile.get("resumeTitle", ""),
+        "resumeSummary": profile.get("resumeSummary", ""),
         "portrait": portrait,
     }
     return {
@@ -164,12 +166,12 @@ async def create_inquiry(payload: InquiryIn):
     await db.inquiries.insert_one(doc)
 
     site = await get_site_singleton()
-    owner = (site.get("ownerNotifyEmail") or "").strip()
+    owner = (site.get("ownerNotifyEmail") or os.environ.get("EMAIL_FROM_ADDRESS") or "").strip()
     emailed = False
     if owner:
         try:
             await send_email(to=owner, subject=f"New project inquiry — {payload.name}",
-                             html=inquiry_notification_html(doc))
+                             html=inquiry_notification_html(doc), reply_to=payload.email)
             emailed = True
         except Exception as e:
             logger.error(f"Inquiry email failed: {e}")
@@ -533,21 +535,51 @@ async def migrate_v6():
 
 
 async def seed_content():
-    await migrate_v5()
-    await migrate_v6()
-    if await db.services.count_documents({}) == 0:
-        await db.services.insert_many([dict(s) for s in DEFAULT_SERVICES])
-    if await db.pricing.count_documents({}) == 0:
-        await db.pricing.insert_many([dict(p) for p in DEFAULT_PRICING])
-    if await db.projects.count_documents({}) == 0:
-        await db.projects.insert_many([dict(p) for p in DEFAULT_PROJECTS])
-    for name, docs in CMS_SEEDS.items():
-        if await db[name].count_documents({}) == 0:
-            await db[name].insert_many([dict(d) for d in docs])
+    # Insert defaults by stable ID only. Existing records/admin edits are never overwritten.
+    initial_collections = {
+        "services": DEFAULT_SERVICES,
+        "pricing": PRICING_V2,
+        "projects": DEFAULT_PROJECTS,
+        **CMS_SEEDS,
+    }
+    for name, docs in initial_collections.items():
+        for source in docs:
+            doc = dict(source)
+            await db[name].update_one(
+                {"id": doc["id"]},
+                {"$setOnInsert": doc},
+                upsert=True,
+            )
     for key, data in SEED_SINGLETONS.items():
         await db.singletons.update_one(
             {"key": key}, {"$setOnInsert": {"key": key, "data": data}}, upsert=True
         )
+    homepage = home_cms.default_homepage_config()
+    timestamp = datetime.now(timezone.utc).isoformat()
+    await db.homepage_config.update_one(
+        {"key": "draft"},
+        {"$setOnInsert": {"key": "draft", "data": homepage, "updated_at": timestamp}},
+        upsert=True,
+    )
+    await db.homepage_config.update_one(
+        {"key": "published"},
+        {"$setOnInsert": {"key": "published", "data": homepage, "updated_at": timestamp, "published_at": timestamp}},
+        upsert=True,
+    )
+    # Migrate hard-coded resume-only content into the existing profile exactly once per missing field.
+    profile_seed = SEED_SINGLETONS["profile"]
+    for field in ("resumeTitle", "resumeSummary"):
+        await db.singletons.update_one(
+            {"key": "profile", f"data.{field}": {"$exists": False}},
+            {"$set": {f"data.{field}": profile_seed[field]}},
+        )
+
+    # Legacy schema normalization is tracked and runs once, never as a destructive reseed.
+    migration = await db.system_migrations.find_one({"id": "content-v6"})
+    if not migration:
+        await migrate_v5()
+        await migrate_v6()
+        await db.system_migrations.insert_one({"id": "content-v6", "applied_at": datetime.now(timezone.utc).isoformat()})
     # migration: v1 records lack CMS status flags
     for name in cms.PUBLISHABLE:
         await db[name].update_many({"status": {"$exists": False}}, {"$set": {"status": "published"}})
@@ -563,15 +595,13 @@ async def seed_content():
 
 @app.on_event("startup")
 async def startup():
+    await verify_database_connection()
     await create_indexes()
     await db.password_reset_tokens.create_index("token")
     await seed_admin()
     await seed_content()
-    try:
-        init_storage()
-        await ensure_generated_resume()
-    except Exception as e:
-        logger.error(f"Storage/resume init failed: {e}")
+    init_storage()
+    await ensure_generated_resume()
 
 
 @app.on_event("shutdown")

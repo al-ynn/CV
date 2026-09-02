@@ -7,55 +7,13 @@ from reportlab.pdfgen import canvas
 from db import db
 from storage import put_object, get_object
 
-GENERATED_PATH = "amurao-dev/resume/generated.pdf"
-CUSTOM_PATH = "amurao-dev/resume/custom.pdf"
+GENERATED_PATH = "resumes/generated.pdf"
+CUSTOM_PATH = "resumes/custom.pdf"
 
 INK = HexColor("#15132E")
 MUTED = HexColor("#5F6880")
 VIOLET = HexColor("#6D28D9")
 LINE = HexColor("#D8DDE6")
-
-DATA = {
-    "name": "ALEANA ROSE C. AMURAO",
-    "title": "Full-Stack Developer · Systems Developer · UI/UX Designer · Freelance Technology Partner",
-    "location": "Philippines",
-    "profile": (
-        "BS Information Technology student at Central Luzon State University working as a freelance "
-        "full-stack developer. Experienced in developing real-world systems: e-commerce platforms, "
-        "information systems, business applications, APIs, databases, administrative dashboards, and "
-        "client-facing websites — from planning and interface to deployment and documentation."
-    ),
-    "education": [("BS Information Technology", "Central Luzon State University", "2023 — Present")],
-    "experience": [
-        ("Freelance Full-Stack Web Developer", "2025 — Present",
-         "Responsive websites and web applications with Laravel, Vue.js, Inertia, and MySQL. WordPress and "
-         "WooCommerce builds. Authentication, role-based systems, payment integrations, client requirements, "
-         "and post-deployment support."),
-        ("IT Commissioner / Full-Stack Developer — VNL Company", "2025 — Present",
-         "Project-based full-stack development and technical commissioning."),
-        ("IT Commissioner / Full-Stack Developer — CIM Creatives", "2026 — Present",
-         "Project-based full-stack development and technical commissioning."),
-        ("Customer Support / Cold Caller — Capital Group", "Nov 2024 — Jun 2025",
-         "Client communication, outbound sales, and CRM documentation."),
-    ],
-    "projects": [
-        ("StudYA — E-Commerce Platform", "Laravel · Vue.js · Inertia.js · MySQL · HitPay. Authentication, cart, checkout, administration, payments.", "2026"),
-        ("SoilTrack — Laboratory Information System", "Sample tracking, results management, SMS logs, role-based dashboards for DA-related operations.", "2026"),
-        ("Camela — E-Commerce Website", "Laravel · MySQL · REST APIs · Stripe. Converted an incomplete AI-generated frontend into an operational system.", "2026"),
-        ("IoT Operations Platform", "Role-based access, dashboards, QR workflows, validation, reporting, audit logging.", "2026"),
-        ("Professional CV Website", "WordPress · Elementor responsive portfolio/CV website.", "2024"),
-    ],
-    "skills": [
-        "Frontend: HTML, CSS, JavaScript, Vue.js, React, Inertia.js",
-        "Backend: PHP, Laravel, Python, Django, Java",
-        "Database: MySQL, relational database design",
-        "CMS: WordPress, WooCommerce, Elementor",
-        "Design: Figma, UI/UX, prototyping, Draw.io",
-        "Workflow: Git, GitHub, REST APIs, Agile, Scrum, documentation, testing",
-    ],
-    "certification": ("Google Agile Essentials Specialization", "Coursera × Google", "July 2026"),
-}
-
 
 def _wrap(text, width):
     words, lines, cur = text.split(), [], ""
@@ -70,7 +28,7 @@ def _wrap(text, width):
     return lines
 
 
-def build_resume_bytes(portrait_bytes: bytes | None = None) -> bytes:
+def build_resume_bytes(data: dict, portrait_bytes: bytes | None = None) -> bytes:
     buf = BytesIO()
     c = canvas.Canvas(buf, pagesize=A4)
     W, H = A4
@@ -114,21 +72,21 @@ def build_resume_bytes(portrait_bytes: bytes | None = None) -> bytes:
     c.setFillColor(VIOLET)
     c.drawString(x, y, "RESUME / CV — AMURAO.DEV")
     y -= 7 * mm
-    line(7 * mm, 17, "Helvetica-Bold", INK, DATA["name"])
-    line(5 * mm, 8.5, "Helvetica", MUTED, DATA["title"])
-    line(6 * mm, 8.5, "Courier", MUTED, f"LOCATION: {DATA['location'].upper()}")
+    line(7 * mm, 17, "Helvetica-Bold", INK, data["name"].upper())
+    line(5 * mm, 8.5, "Helvetica", MUTED, data["title"])
+    line(6 * mm, 8.5, "Courier", MUTED, f"LOCATION: {data['location'].upper()}")
 
     heading("Profile")
-    for ln in _wrap(DATA["profile"], 100):
+    for ln in _wrap(data["profile"], 100):
         line(4.2 * mm, 9, "Helvetica", INK, ln)
 
     heading("Education")
-    for deg, school, yr in DATA["education"]:
+    for deg, school, yr in data["education"]:
         line(4.5 * mm, 9.5, "Helvetica-Bold", INK, deg)
         line(4 * mm, 8.5, "Helvetica", MUTED, f"{school}  ·  {yr}")
 
     heading("Experience")
-    for role, yr, desc in DATA["experience"]:
+    for role, yr, desc in data["experience"]:
         line(4.5 * mm, 9.5, "Helvetica-Bold", INK, role)
         line(3.8 * mm, 8, "Courier", VIOLET, yr)
         for ln in _wrap(desc, 105):
@@ -136,26 +94,90 @@ def build_resume_bytes(portrait_bytes: bytes | None = None) -> bytes:
         y -= 1.5 * mm
 
     heading("Selected Projects")
-    for title, desc, yr in DATA["projects"]:
+    for title, desc, yr in data["projects"]:
         line(4.5 * mm, 9.5, "Helvetica-Bold", INK, f"{title}  ·  {yr}")
         for ln in _wrap(desc, 105):
             line(4 * mm, 8.5, "Helvetica", MUTED, ln)
         y -= 1 * mm
 
     heading("Technical Skills")
-    for s in DATA["skills"]:
+    for s in data["skills"]:
         line(4.2 * mm, 8.5, "Helvetica", INK, s)
 
-    heading("Certification")
-    name, org, yr = DATA["certification"]
-    line(4.5 * mm, 9.5, "Helvetica-Bold", INK, name)
-    line(4 * mm, 8.5, "Helvetica", MUTED, f"{org}  ·  {yr}")
+    heading("Certifications")
+    for name, org, yr in data["certifications"]:
+        line(4.5 * mm, 9.5, "Helvetica-Bold", INK, name)
+        line(4 * mm, 8.5, "Helvetica", MUTED, f"{org}  ·  {yr}")
 
     c.setFont("Courier", 7)
     c.setFillColor(MUTED)
     c.drawString(x, 12 * mm, "BUILD / SHIP / ITERATE — generated by amurao.dev, replaceable via admin panel")
     c.save()
     return buf.getvalue()
+
+
+def _period(item: dict, start_key: str = "start", end_key: str = "end", current_key: str = "current") -> str:
+    start = str(item.get(start_key, ""))
+    if item.get(current_key):
+        return f"{start} — Present"
+    end = str(item.get(end_key, ""))
+    return f"{start} — {end}" if end else start
+
+
+async def get_resume_data() -> dict:
+    """Build the website/PDF resume model exclusively from current MongoDB records."""
+    singleton_docs = await db.singletons.find(
+        {"key": {"$in": ["profile", "about", "contact"]}}, {"_id": 0}
+    ).to_list(3)
+    singletons = {doc["key"]: doc.get("data", {}) for doc in singleton_docs}
+    profile = singletons.get("profile", {})
+    about = singletons.get("about", {})
+
+    query = {"status": "published", "archived": {"$ne": True}}
+    experience = await db.experience.find(query, {"_id": 0}).sort("order", 1).to_list(100)
+    education = await db.education.find(query, {"_id": 0}).sort("order", 1).to_list(100)
+    projects = await db.projects.find(query, {"_id": 0}).sort("order", 1).to_list(100)
+    skills = await db.skills.find(query, {"_id": 0}).sort("order", 1).to_list(100)
+    certifications = await db.certifications.find(query, {"_id": 0}).sort("order", 1).to_list(100)
+
+    return {
+        "name": profile.get("fullName", ""),
+        "title": profile.get("resumeTitle") or profile.get("title", ""),
+        "location": profile.get("location", ""),
+        "profile": profile.get("resumeSummary") or profile.get("shortBio") or about.get("shortBio", ""),
+        "education": [
+            (
+                item.get("program") or item.get("degree", ""),
+                item.get("institution", ""),
+                _period(item, "startYear", "endYear", "currentEnrolled"),
+            )
+            for item in education
+        ],
+        "experience": [
+            (
+                f"{item.get('role', '')} — {item.get('org', '')}",
+                _period(item),
+                item.get("description") or " ".join(item.get("points") or []),
+            )
+            for item in experience
+        ],
+        "projects": [
+            (
+                " — ".join(filter(None, [item.get("title", ""), item.get("subtitle", "")])),
+                " · ".join(item.get("stack") or []) + ((". " + item.get("description", "")) if item.get("description") else ""),
+                str(item.get("year", "")),
+            )
+            for item in projects
+        ],
+        "skills": [
+            f"{item.get('title', '').title()}: " + ", ".join(skill.get("name", "") for skill in item.get("items") or [])
+            for item in skills if item.get("title") != "PROFESSIONAL SKILLS"
+        ],
+        "certifications": [
+            (item.get("name", ""), item.get("issuer", ""), item.get("date", ""))
+            for item in certifications
+        ],
+    }
 
 
 async def get_portrait_bytes() -> bytes | None:
@@ -180,10 +202,15 @@ async def get_portrait_bytes() -> bytes | None:
 async def ensure_generated_resume():
     existing = await db.files.find_one({"kind": "resume_generated", "is_deleted": False})
     if existing:
-        return
+        try:
+            await get_object(existing["storage_path"])
+            return
+        except FileNotFoundError:
+            pass
     portrait = await get_portrait_bytes()
-    data = build_resume_bytes(portrait)
-    result = await put_object(GENERATED_PATH, data, "application/pdf")
+    resume_data = await get_resume_data()
+    pdf = build_resume_bytes(resume_data, portrait)
+    result = await put_object(GENERATED_PATH, pdf, "application/pdf")
     await db.files.update_one(
         {"kind": "resume_generated"},
         {"$set": {"kind": "resume_generated", "storage_path": result["path"], "is_deleted": False,
@@ -195,11 +222,15 @@ async def ensure_generated_resume():
 async def get_resume_bytes() -> bytes:
     custom = await db.files.find_one({"kind": "resume_custom", "is_deleted": False})
     if custom:
-        data, _ = await get_object(custom["storage_path"])
-        return data
+        try:
+            data, _ = await get_object(custom["storage_path"])
+            return data
+        except FileNotFoundError:
+            await db.files.update_one({"kind": "resume_custom"}, {"$set": {"is_deleted": True}})
     # regenerate fresh so the CV always reflects the current portrait
     portrait = await get_portrait_bytes()
-    return build_resume_bytes(portrait)
+    resume_data = await get_resume_data()
+    return build_resume_bytes(resume_data, portrait)
 
 
 async def save_custom_resume(content: bytes, filename: str) -> dict:
