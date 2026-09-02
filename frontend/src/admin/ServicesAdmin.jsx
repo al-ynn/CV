@@ -3,6 +3,7 @@ import api, { formatApiError } from "../lib/api";
 import { useContent } from "../lib/content";
 import { StatusBadge } from "./fields";
 import { Plus, X, ArrowUp, ArrowDown, Copy, Archive, ArchiveRestore, Trash2, ChevronDown } from "lucide-react";
+import { useAdminFeedback } from "./AdminFeedback";
 
 const LEVELS = ["CORE", "PROFICIENT", "WORKING KNOWLEDGE", "FAMILIAR", "LEARNING"];
 const inputCls = "w-full h-9 px-3 bg-canvas border border-line font-mono text-xs text-ink focus:border-violet focus:outline-none";
@@ -30,6 +31,7 @@ function ListEditor({ label, value, placeholder, onChange }) {
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
 export default function ServicesAdmin() {
+  const { confirm } = useAdminFeedback();
   const { refresh } = useContent();
   const [cats, setCats] = useState(null);
   const [projects, setProjects] = useState([]);
@@ -50,7 +52,7 @@ export default function ServicesAdmin() {
     try {
       const { id, created_at, ...doc } = cat;
       doc.slug = doc.slug || slugify(doc.title);
-      if (String(id).includes("-") && cats.some((c) => c.id === id)) {
+      if (id && cats.some((c) => c.id === id)) {
         await api.put(`/admin/collection/services/${id}`, doc);
       } else {
         await api.post("/admin/collection/services", { ...doc, id: undefined });
@@ -81,8 +83,8 @@ export default function ServicesAdmin() {
     setCapModal(null);
   };
 
-  const removeCap = (cat, i) => {
-    if (!window.confirm(`Remove capability "${cat.capabilities[i].name}"?`)) return;
+  const removeCap = async (cat, i) => {
+    if (!await confirm({ title: "Remove capability?", item: cat.capabilities[i].name, description: "This capability will be removed from the service category.", confirmLabel: "Remove", danger: true })) return;
     act(() => api.put(`/admin/collection/services/${cat.id}`, { ...cat, capabilities: cat.capabilities.filter((_, j) => j !== i) }), "✓ Removed");
   };
 
@@ -179,7 +181,7 @@ export default function ServicesAdmin() {
                 {cat.archived ? <>
                   <button onClick={() => act(() => api.post(`/admin/collection/services/${cat.id}/restore`), "✓ Restored")}
                     aria-label="Restore" className="p-2 border border-line text-ink3 hover:text-grn"><ArchiveRestore size={12} /></button>
-                  <button onClick={() => window.confirm(`DELETE PERMANENTLY?\n\n${cat.title}\n\nThis cannot be undone.`) && act(() => api.delete(`/admin/collection/services/${cat.id}?hard=true`), "✓ Deleted")}
+                  <button onClick={async () => await confirm({ title: "Delete category permanently?", item: cat.title, description: "This action cannot be undone.", confirmLabel: "Delete permanently", danger: true }) && act(() => api.delete(`/admin/collection/services/${cat.id}?hard=true`), "✓ Deleted")}
                     aria-label="Delete permanently" className="p-2 border border-line text-ink3 hover:text-pk"><Trash2 size={12} /></button>
                 </> : <>
                 <button onClick={() => { setEditingCat(cat.id); setCatDraft({ ...cat }); }} data-testid={`svc-edit-${cat.id}`}
@@ -190,7 +192,7 @@ export default function ServicesAdmin() {
                   className="px-3 h-8 border border-line font-mono text-[9px] uppercase text-ink2 hover:border-violet">
                   {cat.status === "published" ? "Unpublish" : "Publish"}
                 </button>
-                <button onClick={() => window.confirm(`ARCHIVE CATEGORY?\n\n${cat.title}\n\nHidden publicly, restorable.`) && act(() => api.delete(`/admin/collection/services/${cat.id}`), "✓ Archived")}
+                <button onClick={async () => await confirm({ title: "Archive category?", item: cat.title, description: "It will be hidden publicly and can be restored later.", confirmLabel: "Archive" }) && act(() => api.delete(`/admin/collection/services/${cat.id}`), "✓ Archived")}
                   aria-label="Archive" className="p-2 border border-line text-ink3 hover:text-amb"><Archive size={12} /></button>
                 </>}
                 <button onClick={() => setOpenCat(openCat === cat.id ? null : cat.id)} aria-label="Expand"

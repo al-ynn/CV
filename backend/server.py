@@ -107,7 +107,20 @@ async def bootstrap():
     profile = singles.get("profile", {})
     site = singles.get("site", {})
     contact = singles.get("contact", {})
-    socials = {k: v for k, v in (profile.get("socials") or {}).items() if v}
+    # Contact & Social is the primary source for public profile links.
+    profile_socials = profile.get("socials") or {}
+    socials = {}
+    social_sources = {
+        "facebook": contact.get("facebookUrl") or profile_socials.get("facebook"),
+        "github": contact.get("github") or profile_socials.get("github"),
+        "linkedin": contact.get("linkedin") or profile_socials.get("linkedin"),
+        "behance": profile_socials.get("behance"),
+        "dribbble": profile_socials.get("dribbble"),
+        "instagram": profile_socials.get("instagram"),
+    }
+    for key, value in social_sources.items():
+        if isinstance(value, str) and value.strip():
+            socials[key] = value.strip()
     availability = site.get("availability", "available")
 
     about_prof = await db.about_profiles.find_one({"status": "published"}, {"_id": 0, "photos": 1})

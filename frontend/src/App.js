@@ -28,9 +28,22 @@ function App() {
 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const lenis = reduceMotion ? null : new Lenis({ autoRaf: true, lerp: 0.11 });
     const body = document.body;
     const root = document.documentElement;
+    const isNativeScrollRegion = (node) => {
+      if (!(node instanceof HTMLElement) || node === body || node === root) return false;
+      const style = window.getComputedStyle(node);
+      const scrollsVertically = /(auto|scroll)/.test(style.overflowY) && node.scrollHeight > node.clientHeight;
+      const scrollsHorizontally = /(auto|scroll)/.test(style.overflowX) && node.scrollWidth > node.clientWidth;
+      return scrollsVertically || scrollsHorizontally;
+    };
+    const lenis = reduceMotion ? null : new Lenis({
+      autoRaf: true,
+      lerp: 0.11,
+      // Let every nested panel, modal, menu, and horizontal rail use native
+      // wheel scrolling. Lenis continues to smooth-scroll the main document.
+      prevent: isNativeScrollRegion,
+    });
     const original = {
       bodyOverflow: body.style.overflow,
       bodyPaddingRight: body.style.paddingRight,

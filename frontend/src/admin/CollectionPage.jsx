@@ -3,10 +3,12 @@ import api, { formatApiError } from "../lib/api";
 import { useContent } from "../lib/content";
 import { Field, StatusBadge, getPath } from "./fields";
 import { Plus, Search, Copy, Archive, ArchiveRestore, Trash2, ArrowUp, ArrowDown, ExternalLink, RotateCcw, Pencil } from "lucide-react";
+import { useAdminFeedback } from "./AdminFeedback";
 
 const FILTERS = ["ALL", "PUBLISHED", "DRAFT", "HIDDEN", "ARCHIVED"];
 
 export default function CollectionPage({ schema, name }) {
+  const { confirm } = useAdminFeedback();
   const { refresh } = useContent();
   const [items, setItems] = useState(null);
   const [search, setSearch] = useState("");
@@ -43,8 +45,8 @@ export default function CollectionPage({ schema, name }) {
     setRevisions(null);
   };
 
-  const closeEditor = () => {
-    if (dirty && !window.confirm("You have unsaved changes.\n\nOK = Discard changes · Cancel = Stay")) return;
+  const closeEditor = async () => {
+    if (dirty && !await confirm({ title: "Discard unsaved changes?", description: "Your changes have not been saved. Continue editing to keep them, or discard them and close the editor.", confirmLabel: "Discard changes", danger: true })) return;
     setEditing(null);
     setDraft(null);
     setDirty(false);
@@ -102,14 +104,14 @@ export default function CollectionPage({ schema, name }) {
     }));
   };
 
-  const archive = (item) => {
-    if (window.confirm(`ARCHIVE ${schema.singular.toUpperCase()}?\n\n${item.title || item.name}\n\nIt will no longer appear publicly, but can be restored.`)) {
+  const archive = async (item) => {
+    if (await confirm({ title: `Archive ${schema.singular}?`, item: item.title || item.name, description: "It will no longer appear publicly, but it can be restored later.", confirmLabel: "Archive" })) {
       act(() => api.delete(`/admin/collection/${name}/${item.id}`));
     }
   };
 
-  const hardDelete = (item) => {
-    if (window.confirm(`DELETE PERMANENTLY?\n\n${item.title || item.name}\n\nThis cannot be undone.`)) {
+  const hardDelete = async (item) => {
+    if (await confirm({ title: `Delete ${schema.singular} permanently?`, item: item.title || item.name, description: "This action cannot be undone.", confirmLabel: "Delete permanently", danger: true })) {
       act(() => api.delete(`/admin/collection/${name}/${item.id}?hard=true`));
     }
   };

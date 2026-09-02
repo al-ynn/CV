@@ -45,11 +45,11 @@ function ServiceDetails({ selected, onClose }) {
   const capabilities = (category.capabilities || []).map(normalize);
   return <motion.div className="fixed inset-0 z-[80] flex justify-end bg-canvas/80 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} role="dialog" aria-modal="true" onClick={onClose}>
     <motion.aside initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 40, opacity: 0 }} transition={{ ease: [0.16, 1, 0.3, 1] }}
-      className="relative w-full max-w-5xl h-full overflow-y-auto overscroll-contain border-l border-line bg-card shadow-2xl" onClick={(event) => event.stopPropagation()}>
-      <div className="sticky top-0 z-10 px-5 sm:px-7 py-4 border-b border-line bg-card/95 backdrop-blur flex items-center justify-between">
+      className="relative flex h-full w-full max-w-5xl flex-col overflow-hidden border-l border-line bg-card shadow-2xl" onClick={(event) => event.stopPropagation()}>
+      <div className="z-10 shrink-0 px-5 sm:px-7 py-4 border-b border-line bg-card/95 backdrop-blur flex items-center justify-between">
         <TechLabel className="text-violet">SERVICE DETAILS</TechLabel><button type="button" onClick={onClose} className="grid place-items-center w-10 h-10 border border-line text-ink3 hover:text-violet hover:border-violet" aria-label="Close service details"><X size={16} /></button>
       </div>
-      <div className="p-6 sm:p-9">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-6 sm:p-9">
         <TechLabel>SERVICE / {category.num || "—"}</TechLabel>
         <h2 className="mt-3 font-display text-3xl sm:text-4xl font-extrabold tracking-tight text-ink">{category.title}</h2>
         <p className="mt-5 text-base leading-relaxed text-ink2">{category.longDescription || category.blurb}</p>
@@ -61,7 +61,9 @@ function ServiceDetails({ selected, onClose }) {
             {(cap.includes.length > 0 || cap.goodFor.length > 0) && <div className="mt-5 space-y-5"><DetailGroup title="WHAT CAN BE INCLUDED" items={cap.includes} /><DetailGroup title="GOOD FOR" items={cap.goodFor} /></div>}
           </article>)}
         </div>
-        <div className="mt-10 pt-6 border-t border-line flex flex-wrap gap-3">
+      </div>
+      <div className="sticky bottom-0 z-20 shrink-0 border-t border-line bg-card/95 px-6 py-4 backdrop-blur sm:px-9">
+        <div className="flex flex-wrap gap-3">
           <Link to="/contact" state={{ service: category.title }} onClick={onClose} data-testid="capability-inquire"
             className="inline-flex min-h-12 items-center gap-2 px-6 bg-violet text-sm font-semibold hover:brightness-110" style={{ color: "var(--bg)" }}>Discuss This Project <ArrowRight size={15} /></Link>
           <Link to="/pricing#estimator" onClick={onClose} className="inline-flex min-h-12 items-center px-6 border border-line text-sm font-semibold text-ink2 hover:text-violet hover:border-violet">Estimate Scope</Link>

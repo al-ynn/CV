@@ -3,6 +3,7 @@ import secrets
 from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, HTTPException, Depends
+from pymongo import ReturnDocument
 
 from db import db
 from auth import get_current_admin
@@ -159,33 +160,54 @@ async def read_homepage(admin=Depends(get_current_admin)):
         "draft": draft["data"],
         "updated_at": draft.get("updated_at"),
         "published_at": (published or {}).get("published_at"),
-        "has_unpublished_changes": bool(published) and published.get("data") != draft["data"],
+        "has_unpublished_changes": not published or published.get("data") != draft["data"],
     }
 
 
 @router.put("")
 async def save_homepage(payload: dict, admin=Depends(get_current_admin)):
     old = await get_draft()
+    updated_at = now_iso()
     await db.homepage_revisions.update_one(
         {"key": "homepage"},
         {"$push": {"snapshots": {"$each": [{"at": now_iso(), "data": old["data"]}], "$slice": -15}}},
         upsert=True,
     )
-    await db.homepage_config.update_one(
-        {"key": "draft"}, {"$set": {"data": payload, "updated_at": now_iso()}}, upsert=True
+    saved = await db.homepage_config.find_one_and_update(
+        {"key": "draft"},
+        {"$set": {"data": payload, "updated_at": updated_at}},
+        projection={"_id": 0},
+        upsert=True,
+        return_document=ReturnDocument.AFTER,
     )
-    return {"status": "ok", "updated_at": now_iso()}
+    published = await db.homepage_config.find_one({"key": "published"}, {"_id": 0})
+    return {
+        "status": "ok",
+        "draft": saved["data"],
+        "updated_at": saved["updated_at"],
+        "published_at": (published or {}).get("published_at"),
+        "has_unpublished_changes": not published or published.get("data") != saved["data"],
+    }
 
 
 @router.post("/publish")
 async def publish_homepage(admin=Depends(get_current_admin)):
     draft = await get_draft()
-    await db.homepage_config.update_one(
+    published_at = now_iso()
+    published = await db.homepage_config.find_one_and_update(
         {"key": "published"},
-        {"$set": {"data": draft["data"], "updated_at": now_iso(), "published_at": now_iso()}},
+        {"$set": {"data": draft["data"], "updated_at": published_at, "published_at": published_at}},
+        projection={"_id": 0},
         upsert=True,
+        return_document=ReturnDocument.AFTER,
     )
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "published": published["data"],
+        "updated_at": published["updated_at"],
+        "published_at": published["published_at"],
+        "has_unpublished_changes": False,
+    }
 
 
 @router.post("/preview-token")

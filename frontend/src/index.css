@@ -52,7 +52,7 @@
 
 @layer base {
   * { border-color: var(--line); }
-  html { scroll-behavior: auto; }
+  html { scroll-behavior: auto; scrollbar-gutter: stable; }
   body {
     background-color: var(--bg);
     color: var(--tx);
@@ -62,7 +62,17 @@
     transition: background-color 0.35s ease, color 0.35s ease;
   }
   ::selection { background: var(--violet); color: var(--bg); }
-  ::-webkit-scrollbar { width: 10px; }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) var(--bg);
+  }
+  [class*="overflow-y-auto"],
+  [class*="overflow-auto"],
+  [class*="overflow-x-auto"] {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--line); }
   ::-webkit-scrollbar-thumb:hover { background: var(--violet); }
@@ -70,6 +80,17 @@
 }
 
 @layer components {
+  /* Admin screens favor legibility over the terminal-style public branding. */
+  .admin-shell,
+  .admin-shell button,
+  .admin-shell input,
+  .admin-shell textarea,
+  .admin-shell select,
+  .admin-shell .font-mono,
+  .admin-shell .font-display {
+    font-family: "Manrope", sans-serif;
+  }
+
   .bg-grid {
     background-image: linear-gradient(var(--gridline) 1px, transparent 1px),
       linear-gradient(90deg, var(--gridline) 1px, transparent 1px);
@@ -386,8 +407,62 @@
   will-change: transform;
   background: radial-gradient(circle, color-mix(in srgb, var(--violet) 9%, transparent), transparent 62%);
 }
+
+/* About-page ambient trail: a quiet, viewport-following light behind the content. */
+.about-page-shell {
+  position: relative;
+  isolation: isolate;
+}
+.about-scroll-light {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0.94;
+}
+.about-scroll-light svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.about-trail-glow,
+.about-trail-road,
+.about-trail-core {
+  fill: none;
+  stroke: url(#about-trail-gradient);
+  vector-effect: non-scaling-stroke;
+}
+.about-trail-glow {
+  stroke-width: 42;
+  opacity: 0.2;
+  filter: url(#about-trail-glow);
+}
+.about-trail-road {
+  stroke-width: 11;
+  opacity: 0.24;
+}
+.about-trail-core {
+  stroke-width: 2.5;
+  stroke-dasharray: 7 16;
+  opacity: 0.86;
+}
+.about-trail-arrows {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
 @media (pointer: coarse), (prefers-reduced-motion: reduce), (max-width: 767px) {
   .cursor-glow { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-trail-arrows { display: none; }
+}
+
+@media (max-width: 640px) {
+  .about-scroll-light { opacity: 0.52; }
 }
 
 /* Timeline connector beams — gradient rail + traveling pulse (transform-only). */

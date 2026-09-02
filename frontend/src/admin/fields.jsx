@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../lib/api";
 import { ArrowUp, ArrowDown, X, Plus, ImageIcon, Upload } from "lucide-react";
 
@@ -98,13 +98,21 @@ function PipeListEditor({ value = [], onChange, def }) {
   );
 }
 
-export function MediaPicker({ open, onClose, onSelect }) {
+export function MediaPicker({ open, onClose, onSelect, multiple = false }) {
   const [media, setMedia] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [selected, setSelected] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const load = () => api.get("/admin/media").then(({ data }) => setMedia(data));
-  useState(() => { if (open) load(); }, [open]);
-  if (open && media === null) load();
+  useEffect(() => {
+    if (open) {
+      setSelected([]);
+      setError("");
+      load();
+    }
+  }, [open]);
 
   if (!open) return null;
   const images = (media || []).filter((m) => m.mime?.startsWith("image/"));
@@ -123,6 +131,29 @@ export function MediaPicker({ open, onClose, onSelect }) {
     }
   };
 
+  const choose = async (url) => {
+    if (multiple) {
+      setSelected((current) => current.includes(url) ? current.filter((item) => item !== url) : [...current, url]);
+      return;
+    }
+    await onSelect(url);
+    onClose();
+  };
+
+  const confirmSelection = async () => {
+    if (!selected.length) return;
+    setSaving(true);
+    setError("");
+    try {
+      await onSelect(selected);
+      onClose();
+    } catch (err) {
+      setError(err.response?.data?.detail || err.message || "Unable to save selected photos.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-canvas/80 backdrop-blur-sm" onClick={onClose} />
@@ -137,17 +168,32 @@ export function MediaPicker({ open, onClose, onSelect }) {
             <button onClick={onClose} aria-label="Close" className="text-ink3 hover:text-ink"><X size={16} /></button>
           </div>
         </div>
-        <div className="p-4 overflow-y-auto grid grid-cols-3 sm:grid-cols-4 gap-3">
+        <div className="p-4 overflow-y-auto grid grid-cols-2 sm:grid-cols-4 gap-3">
           {images.length === 0 && (
             <p className="col-span-full py-10 text-center font-mono text-xs text-ink3">NO IMAGES YET — UPLOAD ONE</p>
           )}
           {images.map((m) => (
-            <button key={m.id} onClick={() => { onSelect(m.url); onClose(); }} data-testid={`media-pick-${m.id}`}
-              className="border border-line hover:border-violet transition-colors overflow-hidden bg-canvas2 aspect-video">
+            <button key={m.id} onClick={() => choose(m.url)} data-testid={`media-pick-${m.id}`}
+              aria-pressed={selected.includes(m.url)}
+              className={`relative border transition-colors overflow-hidden bg-canvas2 aspect-video ${selected.includes(m.url) ? "border-violet ring-2 ring-violet/30" : "border-line hover:border-violet"}`}>
               <img src={`${process.env.REACT_APP_BACKEND_URL}${m.url}`} alt={m.alt || m.filename} className="w-full h-full object-cover" loading="lazy" />
+              {selected.includes(m.url) && <span className="absolute top-2 right-2 grid place-items-center w-6 h-6 rounded-full bg-violet text-white text-xs font-bold">✓</span>}
             </button>
           ))}
         </div>
+        {multiple && (
+          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-t border-line bg-canvas2/40">
+            <div>
+              <p className="text-xs text-ink2">{selected.length} photo{selected.length === 1 ? "" : "s"} selected</p>
+              {error && <p className="mt-1 text-xs text-pk">{String(error)}</p>}
+            </div>
+            <button type="button" onClick={confirmSelection} disabled={!selected.length || saving}
+              data-testid="media-picker-save"
+              className="h-10 px-5 bg-violet text-white text-xs font-semibold disabled:opacity-40">
+              {saving ? "Saving…" : `Add Selected Photo${selected.length === 1 ? "" : "s"}`}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

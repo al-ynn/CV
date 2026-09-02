@@ -14,6 +14,7 @@ import AboutAdmin from "./AboutAdmin";
 import HomepageAdmin from "./HomepageAdmin";
 import ServicesAdmin from "./ServicesAdmin";
 import PricingAdmin from "./PricingAdmin";
+import { AdminFeedbackProvider } from "./AdminFeedback";
 import {
   Sun, Moon, Monitor, LogOut, ExternalLink, Menu, X, LayoutDashboard, Globe,
   FolderGit2, Briefcase, Inbox as InboxIcon, Image as ImageIcon, Settings2,
@@ -325,7 +326,8 @@ export default function AdminApp() {
   );
 
   return (
-    <div className="min-h-screen bg-canvas flex flex-col lg:flex-row" data-testid="admin-dashboard">
+    <AdminFeedbackProvider>
+    <div className="admin-shell min-h-screen bg-canvas flex flex-col lg:flex-row" data-testid="admin-dashboard">
       {/* desktop: primary rail + contextual sub-sidebar */}
       <aside className={`hidden lg:flex ${rail ? "w-16" : "w-52"} border-r border-line bg-canvas2/40 flex-col shrink-0 sticky top-0 h-screen transition-[width] duration-200`}>
         {primaryNav(rail)}
@@ -414,5 +416,6 @@ export default function AdminApp() {
         </div>
       </main>
     </div>
+    </AdminFeedbackProvider>
   );
 }

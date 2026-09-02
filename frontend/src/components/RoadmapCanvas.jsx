@@ -9,12 +9,12 @@ const POS = {
   REVIEW: { x: 610, y: 500 }, SHIP: { x: 1020, y: 545 },
 };
 const EDGES = [
-  { id: "discover-plan", d: "M280 72 H320 V200 H350", phases: ["DISCOVER", "PLAN"] },
+  { id: "discover-plan", d: "M280 72 H320 V190 H375 V210", phases: ["DISCOVER", "PLAN"] },
   { id: "plan-prototype", d: "M475 210 V160 H670", phases: ["PLAN", "PROTOTYPE"] },
   { id: "prototype-build", d: "M920 72 H1115 V260", phases: ["PROTOTYPE", "BUILD"] },
-  { id: "build-review", d: "M1115 410 V455 H735 V500", phases: ["BUILD", "REVIEW"] },
+  { id: "build-review", d: "M1240 335 H1270 V485 H735 V500", phases: ["BUILD", "REVIEW"] },
   { id: "review-ship", d: "M860 555 H950 V610 H1020", label: "ACCEPTED  →  SHIP", labelAt: [940, 590], phases: ["REVIEW", "SHIP"] },
-  { id: "refine", d: "M860 535 H950 V430 H1115 V410", dashed: true, loop: true, label: "↺  REFINE", labelAt: [1025, 420], phases: ["REVIEW", "BUILD"] },
+  { id: "refine", d: "M860 535 H1310 V360 H1240", dashed: true, loop: true, label: "↺  REFINE", labelAt: [1085, 525], phases: ["REVIEW", "BUILD"] },
   { id: "feedback", d: "M795 180 V500", dashed: true, loop: true, label: "FEEDBACK LOOP", labelAt: [770, 360], rotate: -90, phases: ["PROTOTYPE", "REVIEW"] },
   { id: "iteration", d: "M1270 610 H1370 V20 H155 V50", dashed: true, loop: true, label: "↺  ITERATE  —  RELEASES FEED THE NEXT DISCOVERY", labelAt: [1090, 16], phases: ["SHIP", "DISCOVER"] },
 ];

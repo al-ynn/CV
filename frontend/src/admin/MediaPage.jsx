@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import api, { formatApiError } from "../lib/api";
 import { Upload, Copy, Trash2, FileText } from "lucide-react";
+import { useAdminFeedback } from "./AdminFeedback";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
 export default function MediaPage() {
+  const { confirm } = useAdminFeedback();
   const [media, setMedia] = useState(null);
   const [msg, setMsg] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -38,7 +40,7 @@ export default function MediaPage() {
   };
 
   const remove = async (m) => {
-    if (window.confirm(`DELETE FILE?\n\n${m.filename}\n\nContent using this image will lose it.`)) {
+    if (await confirm({ title: "Delete this file?", item: m.filename, description: "Pages using this file will lose the image or document reference.", confirmLabel: "Delete file", danger: true })) {
       await api.delete(`/admin/media/${m.id}`);
       load();
     }

@@ -103,7 +103,7 @@ export default function Contact() {
           <div className="mt-10 panel p-5 space-y-4 font-mono text-[10px] tracking-[0.15em] uppercase">
             <div className="flex items-center justify-between">
               <span className="text-ink3">Response</span>
-              <span className="text-ink">Within a few days</span>
+              <span className="text-ink">Within a few hours</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-ink3">Status</span>

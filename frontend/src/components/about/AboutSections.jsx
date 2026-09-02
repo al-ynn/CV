@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
-import { motion, useInView } from "framer-motion";
+import { AnimatePresence, motion, useInView } from "framer-motion";
 import { Reveal, TechLabel, LevelTag, StatusDot } from "../system/bits";
 import { periodOf } from "../../data/content";
 
@@ -71,17 +71,17 @@ export const informalPhotosOf = (profile) =>
   photosOf(profile).filter((p) => p.role !== "Professional Portrait");
 
 // auto-sliding, swipeable photo carousel
-export function PhotoCarousel({ photos = [], ratio = "aspect-[4/5]", interval = 3800, className = "" }) {
+export function PhotoCarousel({ photos = [], ratio = "aspect-[4/5]", interval = 3800, className = "", pauseOnHover = true }) {
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
   const n = photos.length;
   const startX = useRef(null);
 
   useEffect(() => {
-    if (n <= 1 || paused) return;
+    if (n <= 1 || (pauseOnHover && paused)) return;
     const id = setInterval(() => setIdx((i) => (i + 1) % n), interval);
     return () => clearInterval(id);
-  }, [n, paused, interval]);
+  }, [n, paused, interval, pauseOnHover]);
 
   if (!n) return null;
   const go = (i) => setIdx((i + n) % n);
@@ -96,23 +96,24 @@ export function PhotoCarousel({ photos = [], ratio = "aspect-[4/5]", interval = 
 
   return (
     <div className={`panel overflow-hidden select-none ${className}`} data-testid="photo-carousel"
-      onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
+      onMouseEnter={() => pauseOnHover && setPaused(true)} onMouseLeave={() => setPaused(false)}
       onTouchStart={onDown} onTouchEnd={onUp} onMouseDown={onDown} onMouseUp={onUp}>
       <div className={`relative ${ratio} overflow-hidden bg-canvas2`}>
-        {photos.map((p, i) => (
+        <AnimatePresence initial={false}>
           <motion.img
-            key={i}
-            src={p.url.startsWith("/") ? `${BACKEND}${p.url}` : p.url}
-            alt={p.alt || p.caption || "About photo"}
-            loading={i === 0 ? "eager" : "lazy"}
+            key={`${idx}-${photos[idx].url}`}
+            src={photos[idx].url.startsWith("/") ? `${BACKEND}${photos[idx].url}` : photos[idx].url}
+            alt={photos[idx].alt || photos[idx].caption || "About photo"}
+            loading={idx === 0 ? "eager" : "lazy"}
             draggable={false}
             className="absolute inset-0 w-full h-full object-cover"
-            style={{ objectPosition: `${p.focalX ?? 50}% ${p.focalY ?? 50}%` }}
-            initial={false}
-            animate={{ opacity: i === idx ? 1 : 0, scale: i === idx ? 1 : 1.03 }}
-            transition={{ duration: 0.7, ease: "easeInOut" }}
+            style={{ objectPosition: `${photos[idx].focalX ?? 50}% ${photos[idx].focalY ?? 50}%` }}
+            initial={{ x: "100%", opacity: 0.75 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: "-100%", opacity: 0.75 }}
+            transition={{ duration: 0.8, ease: [0.65, 0, 0.35, 1] }}
           />
-        ))}
+        </AnimatePresence>
         {/* frame counter */}
         <div className="absolute top-2 left-2 z-10 font-mono text-[9px] tracking-[0.2em] px-1.5 py-0.5 bg-black/55 text-white/85">
           {String(idx + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
@@ -935,6 +936,11 @@ export const SECTION_COMPONENTS = {
   gallery: GallerySection,
 };
 
+const ABOUT_GRID_SECTIONS = new Set(["howIWork", "careerGoal"]);
+const aboutSectionClass = (key) => ABOUT_GRID_SECTIONS.has(key)
+  ? "bg-grid border-y border-line px-4 sm:px-7 py-8 sm:py-10 -mx-4 sm:-mx-7"
+  : "";
+
 export function renderOnly(profile, ctx, keys) {
   return keys.map((key) => {
     const conf = (profile.sections || []).find((s) => s.key === key);
@@ -942,7 +948,7 @@ export function renderOnly(profile, ctx, keys) {
     const Comp = SECTION_COMPONENTS[key];
     if (!Comp) return null;
     return (
-      <section key={key} data-section={key}>
+      <section key={key} data-section={key} className={aboutSectionClass(key)}>
         <Comp profile={profile} ctx={ctx} />
       </section>
     );
@@ -960,7 +966,7 @@ export function renderSections(profile, ctx, { skip = [] } = {}) {
     const Comp = SECTION_COMPONENTS[s.key];
     if (!Comp) return null;
     return (
-      <section key={s.key} data-section={s.key}>
+      <section key={s.key} data-section={s.key} className={aboutSectionClass(s.key)}>
         <Comp profile={profile} ctx={ctx} />
       </section>
     );

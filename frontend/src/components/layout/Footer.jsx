@@ -6,6 +6,8 @@ import { StatusDot, TechLabel } from "../system/bits";
 
 const AVAILABILITY_LABEL = { available: "AVAILABLE", limited: "LIMITED", unavailable: "UNAVAILABLE" };
 const AVAILABILITY_COLOR = { available: "var(--green)", limited: "var(--amber)", unavailable: "var(--pink)" };
+const externalUrl = (value) => /^https?:\/\//i.test(value) ? value : `https://${value}`;
+const socialLabel = (key) => ({ github: "GitHub", linkedin: "LinkedIn" }[key] || key.charAt(0).toUpperCase() + key.slice(1));
 
 export default function Footer() {
   const { settings } = useContent();
@@ -24,7 +26,7 @@ export default function Footer() {
   }, []);
 
   const year = new Date().getFullYear();
-  const socials = settings.socials || {};
+  const socials = Object.entries(settings.socials || {}).filter(([, value]) => typeof value === "string" && value.trim());
   const avail = settings.availability || "available";
 
   return (
@@ -87,17 +89,13 @@ export default function Footer() {
                   </a>
                 </li>
               )}
-              {settings.contact?.facebookName && (
+              {settings.contact?.facebookUrl && (
                 <li>
                   <span className="block text-[9px] tracking-[0.2em] text-ink3 uppercase mb-0.5">Facebook</span>
-                  {settings.contact?.facebookUrl ? (
-                    <a href={settings.contact.facebookUrl} target="_blank" rel="noopener noreferrer" data-testid="footer-facebook"
-                      className="text-ink2 hover:text-violet transition-colors">
-                      {settings.contact.facebookName} ↗
-                    </a>
-                  ) : (
-                    <span className="text-ink2" data-testid="footer-facebook">{settings.contact.facebookName}</span>
-                  )}
+                  <a href={externalUrl(settings.contact.facebookUrl)} target="_blank" rel="noopener noreferrer" data-testid="footer-facebook-contact"
+                    className="text-ink2 hover:text-violet transition-colors">
+                    {settings.contact.facebookName || "Facebook Profile"} ↗
+                  </a>
                 </li>
               )}
               <li>
@@ -110,19 +108,19 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div className="lg:col-span-1">
+          {socials.length > 0 && <div className="lg:col-span-1">
             <TechLabel className="block mb-4">Links</TechLabel>
             <ul className="space-y-2.5">
-              {Object.entries(socials).map(([k, v]) => (
+              {socials.map(([k, v]) => (
                 <li key={k}>
-                  <a href={v} target="_blank" rel="noopener noreferrer" data-testid={`footer-${k}`}
+                  <a href={externalUrl(v.trim())} target="_blank" rel="noopener noreferrer" data-testid={`footer-${k}`}
                     className="font-mono text-[11px] tracking-[0.15em] uppercase text-ink2 hover:text-violet transition-colors">
-                    {k} ↗
+                    {socialLabel(k)} ↗
                   </a>
                 </li>
               ))}
             </ul>
-          </div>
+          </div>}
 
           <div className="lg:col-span-2">
             <TechLabel className="block mb-4">System</TechLabel>

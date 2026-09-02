@@ -4,6 +4,7 @@ import { useContent } from "../lib/content";
 import { ABOUT_TEMPLATES, PHOTO_ROLES, SECTION_NAMES, CUSTOM_BLOCK_TYPES, STATUS_BADGE, timeAgo } from "./aboutShared";
 import { MediaPicker } from "./fields";
 import { ArrowUp, ArrowDown, X, Plus, Eye, RotateCcw, Monitor, Tablet, Smartphone, ExternalLink } from "lucide-react";
+import { useAdminFeedback } from "./AdminFeedback";
 
 const TABS = ["CONTENT", "PHOTOS", "SECTIONS", "TEMPLATE", "STATS & SEO", "HISTORY"];
 const DEVICES = { desktop: { label: "Desktop", width: "100%", icon: Monitor }, tablet: { label: "Tablet", width: 820, icon: Tablet }, mobile: { label: "Mobile", width: 390, icon: Smartphone } };
@@ -64,6 +65,7 @@ function ListEdit({ value = [], onChange, placeholder }) {
 }
 
 export default function AboutEditor({ profileId, onBack }) {
+  const { confirm } = useAdminFeedback();
   const { refresh } = useContent();
   const [p, setP] = useState(null);
   const [dirty, setDirty] = useState(false);
@@ -87,6 +89,7 @@ export default function AboutEditor({ profileId, onBack }) {
     try {
       const doc = { ...pRef.current };
       const { data } = await api.put(`/admin/about/profiles/${profileId}`, doc);
+      if (data.profile) setP(data.profile);
       setDirty(false);
       setLastSaved(data.updated_at);
       if (!silent) setMsg("✓ Draft saved");
@@ -140,8 +143,8 @@ export default function AboutEditor({ profileId, onBack }) {
     else setPreview({ url });
   };
 
-  const back = () => {
-    if (dirty && !window.confirm("You have unsaved changes.\n\nOK = Discard · Cancel = Stay")) return;
+  const back = async () => {
+    if (dirty && !await confirm({ title: "Discard unsaved changes?", description: "Changes to this About profile have not been saved.", confirmLabel: "Discard changes", danger: true })) return;
     onBack();
   };
 
@@ -151,8 +154,27 @@ export default function AboutEditor({ profileId, onBack }) {
   const photoCount = (p.photos || []).length;
 
   // ---------- photos tab helpers ----------
-  const addPhoto = (url) => {
-    set("photos", [...(p.photos || []), { url, role: "Other", caption: "", alt: "", focalX: 50, focalY: 50 }]);
+  const addPhotos = async (urls) => {
+    const selectedUrls = Array.isArray(urls) ? urls : [urls];
+    const current = pRef.current;
+    const existing = new Set((current.photos || []).map((photo) => photo.url));
+    const additions = selectedUrls.filter((url) => !existing.has(url)).map((url) => ({
+      url, role: "Other", caption: "", alt: "", focalX: 50, focalY: 50,
+    }));
+    const next = { ...current, photos: [...(current.photos || []), ...additions] };
+    setP(next);
+    setDirty(true);
+    try {
+      const { data } = await api.put(`/admin/about/profiles/${profileId}`, next);
+      setP(data.profile || next);
+      setDirty(false);
+      setLastSaved(data.updated_at);
+      setMsg(`✓ ${additions.length} photo${additions.length === 1 ? "" : "s"} added and saved`);
+    } catch (error) {
+      setP(current);
+      setDirty(false);
+      throw error;
+    }
   };
   const movePhoto = (i, dir) => {
     const ph = [...p.photos];
@@ -347,7 +369,7 @@ export default function AboutEditor({ profileId, onBack }) {
               <Plus size={12} /> Add Photo
             </button>
           </div>
-          <MediaPicker open={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={addPhoto} />
+          <MediaPicker open={pickerOpen} onClose={() => setPickerOpen(false)} onSelect={addPhotos} multiple />
           {photoCount === 0 && (
             <div className="panel p-12 text-center">
               <p className="font-mono text-xs tracking-[0.25em] text-ink3 mb-2">NO PHOTOS</p>
@@ -585,7 +607,7 @@ export default function AboutEditor({ profileId, onBack }) {
                   <span className="text-ink2">{r.note}</span>
                   <span className="text-ink3 text-[10px]">{new Date(r.at).toLocaleString()}</span>
                   <button
-                    onClick={() => window.confirm("Restore this revision?\n\nIt becomes a new draft — the current state is snapshotted first.") &&
+                    onClick={async () => await confirm({ title: "Restore this revision?", description: "It will become the current draft. Your present state is snapshotted first.", confirmLabel: "Restore revision" }) &&
                       api.post(`/admin/about/profiles/${profileId}/restore-revision/${r.index}`).then(load)}
                     className="px-3 h-8 border border-line font-mono text-[9px] tracking-[0.15em] uppercase text-ink2 hover:border-violet inline-flex items-center gap-1.5">
                     <RotateCcw size={11} /> Restore

@@ -208,7 +208,7 @@ function SystemProfileTemplate({ profile, ctx }) {
           <StatusDot />
         </div>
         <div className="grid lg:grid-cols-12">
-          <div className={`${informal.length ? "lg:col-span-7 border-b lg:border-b-0 lg:border-r" : "lg:col-span-12"} p-6 sm:p-10 border-line`}>
+          <div className={`${informal.length ? "lg:col-span-7" : "lg:col-span-12"} p-6 sm:p-10`}>
             <div className="grid sm:grid-cols-2 gap-x-8 gap-y-6">
               {readout.map(([k, v], i) => (
                 <motion.div key={k} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
@@ -223,10 +223,12 @@ function SystemProfileTemplate({ profile, ctx }) {
             </div>
           </div>
           {informal.length > 0 && (
-            <div className="lg:col-span-5 p-6 sm:p-10 flex flex-col justify-center items-center">
-              <div className="w-full max-w-[300px]">
+            <div className="lg:col-span-5 p-6 sm:p-8 lg:pl-4 flex flex-col justify-center items-center">
+              <div className="w-full max-w-[390px]">
                 <TechLabel className="block mb-3 text-grn">FIELD_LOG // AUTO</TechLabel>
-                <PhotoCarousel photos={informal} ratio="aspect-[4/5]" interval={2600} className="w-full" />
+                <PhotoCarousel photos={informal} ratio="aspect-[4/5]" interval={2600}
+                  pauseOnHover={false}
+                  className="w-full rounded-2xl rotate-[2deg] shadow-2xl shadow-black/25 transition-transform duration-500 hover:rotate-0" />
               </div>
             </div>
           )}

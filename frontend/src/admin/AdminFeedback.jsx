@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { createContext, useCallback, useContext, useRef, useState, useEffect } from "react";
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
 
 const TONES = {
@@ -7,6 +7,37 @@ const TONES = {
   warning: { icon: AlertTriangle, color: "text-amb", border: "border-amb/50", bar: "bg-amb" },
   info: { icon: Info, color: "text-violet", border: "border-violet/50", bar: "bg-violet" },
 };
+
+const FeedbackContext = createContext(null);
+
+export function AdminFeedbackProvider({ children }) {
+  const [dialog, setDialog] = useState(null);
+  const resolver = useRef(null);
+
+  const confirm = useCallback((options) => new Promise((resolve) => {
+    resolver.current = resolve;
+    setDialog(options);
+  }), []);
+
+  const finish = useCallback((answer) => {
+    setDialog(null);
+    resolver.current?.(answer);
+    resolver.current = null;
+  }, []);
+
+  return (
+    <FeedbackContext.Provider value={{ confirm }}>
+      {children}
+      <AdminConfirm open={!!dialog} {...dialog} onCancel={() => finish(false)} onConfirm={() => finish(true)} />
+    </FeedbackContext.Provider>
+  );
+}
+
+export function useAdminFeedback() {
+  const value = useContext(FeedbackContext);
+  if (!value) throw new Error("useAdminFeedback must be used inside AdminFeedbackProvider");
+  return value;
+}
 
 export function AdminToast({ notification, onClose }) {
   useEffect(() => {

@@ -4,6 +4,7 @@ from datetime import datetime, timezone, timedelta
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+from pymongo import ReturnDocument
 from typing import Optional
 
 from db import db
@@ -269,8 +270,13 @@ async def update_profile(pid: str, payload: dict, admin=Depends(get_current_admi
     doc["updated_at"] = now_iso()
     doc["editor"] = admin.get("email", "admin")
     await snapshot_revision(old, "Updated")
-    await db.about_profiles.update_one({"id": pid}, {"$set": doc})
-    return {"status": "ok", "updated_at": doc["updated_at"]}
+    saved = await db.about_profiles.find_one_and_update(
+        {"id": pid},
+        {"$set": doc},
+        projection={"_id": 0},
+        return_document=ReturnDocument.AFTER,
+    )
+    return {"status": "ok", "updated_at": saved["updated_at"], "profile": saved}
 
 
 @router.post("/profiles/{pid}/publish")

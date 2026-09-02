@@ -19,6 +19,7 @@ export default function Work() {
   );
 
   return (
+    <div className="bg-grid min-h-screen">
     <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-16 sm:py-24">
       <SectionHead num="02 /" title="PROJECT ARCHIVE"
         sub="Every record is a real system — scoped, built, and shipped. Confidential work is labeled accordingly." />
@@ -60,6 +61,7 @@ export default function Work() {
       <p className="mt-8 font-mono text-[10px] tracking-[0.2em] text-ink3 uppercase">
         {filtered.length} RECORD{filtered.length === 1 ? "" : "S"} · FILTER: {active}
       </p>
+    </div>
     </div>
   );
 }

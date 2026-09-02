@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../lib/api";
 import { Trash2 } from "lucide-react";
+import { useAdminFeedback } from "./AdminFeedback";
 
 const STATUSES = ["NEW", "READ", "REPLIED", "QUALIFIED", "CLOSED", "SPAM"];
 const STATUS_STYLE = {
@@ -9,6 +10,7 @@ const STATUS_STYLE = {
 };
 
 export default function InboxPage() {
+  const { confirm } = useAdminFeedback();
   const [items, setItems] = useState(null);
   const [openId, setOpenId] = useState(null);
   const [filter, setFilter] = useState("ALL");
@@ -20,7 +22,7 @@ export default function InboxPage() {
   const setStatus = async (id, status) => { await api.patch(`/admin/inquiries/${id}`, { status }); load(); };
   const saveNotes = async (id) => { await api.patch(`/admin/inquiries/${id}`, { notes }); load(); };
   const remove = async (id) => {
-    if (window.confirm("Delete this inquiry permanently?")) {
+    if (await confirm({ title: "Delete inquiry permanently?", description: "The message, contact details, and admin notes will be removed. This cannot be undone.", confirmLabel: "Delete permanently", danger: true })) {
       await api.delete(`/admin/inquiries/${id}`);
       load();
     }

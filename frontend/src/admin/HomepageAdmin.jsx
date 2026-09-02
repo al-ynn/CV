@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import api, { formatApiError } from "../lib/api";
 import { useContent } from "../lib/content";
 import { Plus, X, ArrowUp, ArrowDown, Eye, ExternalLink, RotateCcw, Monitor, Tablet, Smartphone, PencilLine } from "lucide-react";
+import { useAdminFeedback } from "./AdminFeedback";
 
 const inputCls = "w-full h-10 px-3 bg-canvas border border-line font-mono text-xs text-ink focus:border-violet focus:outline-none";
 const labelCls = "block font-mono text-[10px] tracking-[0.2em] uppercase text-ink3 mb-1.5";
@@ -74,6 +75,7 @@ const PRESETS = {
 };
 
 export default function HomepageAdmin() {
+  const { confirm } = useAdminFeedback();
   const { refresh } = useContent();
   const [cfg, setCfg] = useState(null);
   const [meta, setMeta] = useState(null);
@@ -84,6 +86,7 @@ export default function HomepageAdmin() {
   const [refs, setRefs] = useState({ projects: [], services: [], technologies: [] });
   const [revisions, setRevisions] = useState(null);
   const [editing, setEditing] = useState(null); // section key open in drawer
+  const [saving, setSaving] = useState(false);
 
   const load = () =>
     api.get("/admin/homepage-config").then(({ data }) => {
@@ -101,18 +104,6 @@ export default function HomepageAdmin() {
       }));
   }, []);
 
-  useEffect(() => {
-    if (!cfg) return;
-    const ids = cfg.services?.ids || [];
-    const isLegacy = ids.length === 0 || (ids.includes("ecommerce") && ids.includes("backend"));
-    if (!isLegacy) return;
-    setCfg((current) => ({
-      ...current,
-      services: { ...current.services, ids: ["fullstack", "uiux", "infosystems", "backend"], max: 4 },
-    }));
-    setDirty(true);
-  }, [cfg]);
-
   const set = (path, value) => {
     const keys = path.split(".");
     setCfg((prev) => {
@@ -126,23 +117,45 @@ export default function HomepageAdmin() {
   };
 
   const save = async () => {
+    setSaving(true);
     try {
-      await api.put("/admin/homepage-config", cfg);
+      const { data } = await api.put("/admin/homepage-config", cfg);
+      setCfg(data.draft);
+      setMeta({
+        updated_at: data.updated_at,
+        published_at: data.published_at,
+        hasChanges: data.has_unpublished_changes,
+      });
       setMsg("✓ Draft saved — public homepage unchanged until you publish");
       setDirty(false);
-      load();
+      return true;
     } catch (err) {
       setMsg(formatApiError(err.response?.data?.detail));
+      return false;
+    } finally {
+      setSaving(false);
     }
   };
 
   const publish = async () => {
-    await api.put("/admin/homepage-config", cfg);
-    await api.post("/admin/homepage-config/publish");
-    setMsg("✓ Published — live homepage updated");
-    setDirty(false);
-    load();
-    refresh();
+    setSaving(true);
+    try {
+      const { data: saved } = await api.put("/admin/homepage-config", cfg);
+      const { data: published } = await api.post("/admin/homepage-config/publish");
+      setCfg(saved.draft);
+      setMeta({
+        updated_at: saved.updated_at,
+        published_at: published.published_at,
+        hasChanges: published.has_unpublished_changes,
+      });
+      setMsg("✓ Published — live homepage updated");
+      setDirty(false);
+      await refresh();
+    } catch (err) {
+      setMsg(formatApiError(err.response?.data?.detail));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const openPreview = async (newTab = false) => {
@@ -160,6 +173,7 @@ export default function HomepageAdmin() {
   const fp = cfg.featuredProjects || {};
   const caps = sp.capabilities || [];
   const phases = cfg.roadmap?.phases || [];
+  const featuredServices = refs.services.filter((service) => service.status === "published" && service.featured).slice(0, 4);
   const sectionVisible = (key) => (cfg.sections || []).find((s) => s.key === key)?.visible !== false;
 
   const activePreset = Object.keys(PRESETS).find((k) =>
@@ -332,26 +346,20 @@ export default function HomepageAdmin() {
           <div><span className={labelCls}>Homepage Limit</span><div className="h-9 px-3 flex items-center border border-line bg-canvas font-mono text-xs text-ink3">4 featured services</div></div>
           <Check label="Show capability counts" checked={cfg.services?.showCount !== false} onChange={(v) => set("services.showCount", v)} />
         </div>
-        <span className={labelCls}>SELECT & ORDER — FOUR FEATURED SERVICE CATEGORIES</span>
+        <span className={labelCls}>FEATURED IN SERVICES CMS</span>
         <div className="space-y-1.5 mt-2">
-          {(cfg.services?.ids || []).slice(0, 4).map((id, i) => {
-            const service = refs.services.find((item) => item.id === id);
-            if (!service) return null;
-            return <div key={id} className="flex items-center gap-2 border border-violet/40 bg-violet/5 px-3 py-2">
+          {featuredServices.map((service, i) => (
+            <div key={service.id} className="flex items-center gap-2 border border-violet/40 bg-violet/5 px-3 py-2">
               <span className="font-mono text-[10px] text-violet w-6">{i + 1}</span>
               <span className="font-mono text-[11px] text-ink flex-1">{service.title}</span>
-              <RowControls i={i} len={Math.min((cfg.services?.ids || []).length, 4)}
-                onMove={(a, d) => set("services.ids", moveIn((cfg.services?.ids || []).slice(0, 4), a, d))}
-                onRemove={(a) => set("services.ids", (cfg.services?.ids || []).filter((_, j) => j !== a))} />
-            </div>;
-          })}
-          {(cfg.services?.ids || []).length < 4 && refs.services.filter((s) => !(cfg.services?.ids || []).includes(s.id)).map((s) => (
-            <button key={s.id} onClick={() => set("services.ids", [...(cfg.services?.ids || []), s.id].slice(0, 4))}
-              data-testid={`hp-svc-${s.id}`} className="w-full flex items-center gap-2 border border-line px-3 py-2 text-left hover:border-violet transition-colors">
-              <Plus size={11} className="text-ink3" /><span className="font-mono text-[11px] text-ink3">{s.title}</span>
-            </button>
+              <span className="font-mono text-[9px] uppercase text-grn">Featured</span>
+            </div>
           ))}
+          {featuredServices.length === 0 && (
+            <p className="border border-dashed border-line px-3 py-4 font-mono text-[10px] text-ink3">No published service is marked Featured. Select services from Admin / Services.</p>
+          )}
         </div>
+        <p className="mt-3 font-mono text-[9px] text-ink3 uppercase">Selection and ordering are managed in Services. Up to four published featured services appear here and on the homepage.</p>
       </div>
     ),
     techStack: (
@@ -458,7 +466,7 @@ export default function HomepageAdmin() {
               <div key={r.index} className="flex items-center justify-between px-4 py-3 font-mono text-[11px]">
                 <span className="text-ink3">{new Date(r.at).toLocaleString()}</span>
                 <button
-                  onClick={() => window.confirm("Restore this draft revision? Current draft is snapshotted first.") &&
+                  onClick={async () => await confirm({ title: "Restore this homepage revision?", description: "It will replace the current draft after the current state is snapshotted.", confirmLabel: "Restore revision" }) &&
                     api.post(`/admin/homepage-config/restore-revision/${r.index}`).then(load)}
                   className="px-3 h-8 border border-line font-mono text-[9px] uppercase text-ink2 hover:border-violet inline-flex items-center gap-1.5">
                   <RotateCcw size={11} /> Restore to Draft
@@ -475,6 +483,7 @@ export default function HomepageAdmin() {
     if (key === "systemProfile") return `${caps.filter((c) => c.visible).length} capabilities`;
     if (key === "featuredProjects") return `${(fp.ids || []).length || "auto"} selected · max ${fp.max}`;
     if (key === "whatIBuild") return `${(cfg.whatIBuild?.items || []).filter((i) => i.visible).length} build types`;
+    if (key === "services") return `${featuredServices.length} featured services`;
     if (key === "techStack") return `${(cfg.techStack?.ids || []).length || "all"} technologies`;
     if (key === "roadmap") return `${phases.filter((p) => p.visible !== false).length} phases`;
     return SECTION_META[key]?.blurb;
@@ -503,11 +512,11 @@ export default function HomepageAdmin() {
           <button onClick={() => openPreview(true)} className="h-9 px-4 border border-line font-mono text-[10px] uppercase text-ink2 hover:border-violet inline-flex items-center gap-1.5">
             <ExternalLink size={12} /> New Tab
           </button>
-          <button onClick={save} data-testid="homepage-save"
+          <button onClick={save} disabled={saving} data-testid="homepage-save"
             className="h-9 px-4 border border-amb/50 font-mono text-[10px] tracking-[0.15em] uppercase text-amb hover:bg-amb/10">
-            Save Draft
+            {saving ? "Saving…" : "Save Draft"}
           </button>
-          <button onClick={publish} data-testid="homepage-publish"
+          <button onClick={publish} disabled={saving} data-testid="homepage-publish"
             className="h-9 px-5 bg-violet font-mono text-[10px] tracking-[0.15em] uppercase font-semibold" style={{ color: "var(--bg)" }}>
             Publish →
           </button>
@@ -556,9 +565,9 @@ export default function HomepageAdmin() {
             <span className="font-mono text-[10px] tracking-[0.3em] text-violet">{group}</span>
             <span className="h-px flex-1 bg-line" />
           </div>
-          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 eq-grid">
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
             {Object.entries(SECTION_META).filter(([, m]) => m.group === group).map(([key, m]) => (
-              <div key={key} className={`panel p-5 eq-card group hover:border-violet transition-colors ${sectionVisible(key) ? "" : "opacity-55"}`}
+              <div key={key} className={`panel p-5 min-h-[180px] flex flex-col group hover:border-violet transition-colors ${sectionVisible(key) ? "" : "opacity-55"}`}
                 data-testid={`hp-card-${key}`}>
                 <div className="flex items-center justify-between mb-3">
                   <span className={`w-1.5 h-1.5 rounded-full ${sectionVisible(key) ? "bg-grn" : "bg-ink3"}`} />
@@ -567,7 +576,7 @@ export default function HomepageAdmin() {
                 <h3 className="font-display text-base font-bold tracking-tight text-ink">{m.title}</h3>
                 <p className="mt-1.5 font-mono text-[9px] text-ink3 uppercase tracking-[0.12em] leading-relaxed">{metaFor(key)}</p>
                 <button onClick={() => setEditing(key)} data-testid={`hp-edit-${key}`}
-                  className="eq-card-foot mt-4 h-9 px-4 border border-line font-mono text-[10px] tracking-[0.15em] uppercase text-ink2 hover:border-violet hover:text-violet transition-colors inline-flex items-center gap-1.5 self-start">
+                  className="mt-auto h-9 px-4 border border-line font-mono text-[10px] tracking-[0.12em] uppercase text-ink2 hover:border-violet hover:text-violet hover:bg-violet/5 transition-colors inline-flex items-center gap-1.5 self-start">
                   <PencilLine size={11} /> Edit
                 </button>
               </div>
@@ -596,7 +605,9 @@ export default function HomepageAdmin() {
                 <h2 className="font-display text-lg font-extrabold tracking-tight text-ink">{SECTION_META[editing]?.title}</h2>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => { save(); }} className="h-9 px-4 border border-amb/50 font-mono text-[10px] uppercase text-amb hover:bg-amb/10">Save Draft</button>
+                <button onClick={save} disabled={saving} className="h-9 px-4 border border-amb/50 font-mono text-[10px] uppercase text-amb hover:bg-amb/10 disabled:opacity-50">
+                  {saving ? "Saving…" : "Save Draft"}
+                </button>
                 <button onClick={() => setEditing(null)} aria-label="Close editor" data-testid="hp-drawer-close"
                   className="h-9 w-9 grid place-items-center border border-line text-ink3 hover:text-ink"><X size={15} /></button>
               </div>

@@ -45,6 +45,7 @@ export default function Pricing() {
   const est = estimator || {};
 
   return (
+    <div className="bg-dots min-h-screen">
     <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-16 sm:py-24">
       <SectionHead num="04 /" title="PRICING"
         sub={est.philosophyBody || "Final pricing depends on scope, integrations, complexity, timeline, and technical requirements."} />
@@ -157,6 +158,7 @@ export default function Pricing() {
           Request Custom Quote →
         </Link>
       </div>
+    </div>
     </div>
   );
 }

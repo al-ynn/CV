@@ -216,15 +216,9 @@ function WhatIBuild({ cfg, num }) {
 
 function ServicesPreview({ cfg, content, num }) {
   const byId = Object.fromEntries(content.services.map((s) => [s.id, s]));
-  let list = (cfg.ids || []).map((id) => byId[id]).filter(Boolean);
-  const preferredIds = ["fullstack", "uiux", "infosystems", "backend"];
-  const legacyIds = list.map((s) => s.id);
-  const isLegacySelection = !list.length || (legacyIds.includes("ecommerce") && legacyIds.includes("backend"));
-  if (isLegacySelection) {
-    const preferred = preferredIds.map((id) => byId[id]).filter(Boolean);
-    list = preferred.length === 4 ? preferred : content.services;
-  }
-  list = list.slice(0, 4);
+  const featured = content.services.filter((service) => service.featured);
+  const configured = (cfg.ids || []).map((id) => byId[id]).filter(Boolean);
+  let list = (featured.length ? featured : configured.length ? configured : content.services).slice(0, cfg.max || 4);
   const homepageLabels = {
     infosystems: "CUSTOM SYSTEM DEVELOPMENT",
     backend: "DATABASE DESIGN",
@@ -233,7 +227,7 @@ function ServicesPreview({ cfg, content, num }) {
   return (
     <section className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28" data-testid="home-services">
       <SectionHead num={num} bigNum={num} eyebrow="SERVICE_INDEX / FEATURED" title={cfg.heading && cfg.heading !== "SERVICES" ? cfg.heading : "FEATURED SERVICES"}
-        sub="Four featured service areas. Explore the full directory for every available capability." />
+        sub="Selected service areas from the Services CMS. Explore the full directory for every available capability." />
       <div className="border-t border-line">
         {list.map((s, i) => (
           <Reveal key={s.id} delay={i * 0.04}>
