@@ -59,7 +59,7 @@ export function useChannels(settings) {
   ].filter(Boolean);
 }
 
-export default function DirectChannels({ settings, columns = "sm:grid-cols-3", testidPrefix = "channel" }) {
+export default function DirectChannels({ settings, columns = "sm:grid-cols-3", testidPrefix = "channel", compact = false }) {
   const items = useChannels(settings);
   if (!items.length) return null;
   return (
@@ -69,7 +69,7 @@ export default function DirectChannels({ settings, columns = "sm:grid-cols-3", t
         return (
           <Reveal key={ch.key} delay={i * 0.06} className="h-full">
             <div
-              className="eq-card panel panel-hover p-5 relative overflow-hidden group"
+              className={`${compact ? "min-h-0" : "eq-card"} panel panel-hover p-5 relative overflow-hidden group`}
               data-testid={`${testidPrefix}-${ch.key}`}
             >
               <div className="absolute top-0 left-0 w-full h-0.5 bg-violet scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500" />

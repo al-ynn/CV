@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 import { Reveal, TechLabel, LevelTag, StatusDot } from "../system/bits";
 import { periodOf } from "../../data/content";
@@ -66,6 +66,134 @@ export const photoByRole = (profile, role, fallbackIndex = 0) => {
   const photos = photosOf(profile);
   return photos.find((p) => p.role === role) || photos[fallbackIndex] || null;
 };
+// informal photos = everything that isn't the formal professional portrait
+export const informalPhotosOf = (profile) =>
+  photosOf(profile).filter((p) => p.role !== "Professional Portrait");
+
+// auto-sliding, swipeable photo carousel
+export function PhotoCarousel({ photos = [], ratio = "aspect-[4/5]", interval = 3800, className = "" }) {
+  const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const n = photos.length;
+  const startX = useRef(null);
+
+  useEffect(() => {
+    if (n <= 1 || paused) return;
+    const id = setInterval(() => setIdx((i) => (i + 1) % n), interval);
+    return () => clearInterval(id);
+  }, [n, paused, interval]);
+
+  if (!n) return null;
+  const go = (i) => setIdx((i + n) % n);
+  const onDown = (e) => { startX.current = (e.touches ? e.touches[0].clientX : e.clientX); };
+  const onUp = (e) => {
+    if (startX.current == null) return;
+    const endX = (e.changedTouches ? e.changedTouches[0].clientX : e.clientX);
+    const dx = endX - startX.current;
+    if (Math.abs(dx) > 40) go(dx < 0 ? idx + 1 : idx - 1);
+    startX.current = null;
+  };
+
+  return (
+    <div className={`panel overflow-hidden select-none ${className}`} data-testid="photo-carousel"
+      onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
+      onTouchStart={onDown} onTouchEnd={onUp} onMouseDown={onDown} onMouseUp={onUp}>
+      <div className={`relative ${ratio} overflow-hidden bg-canvas2`}>
+        {photos.map((p, i) => (
+          <motion.img
+            key={i}
+            src={p.url.startsWith("/") ? `${BACKEND}${p.url}` : p.url}
+            alt={p.alt || p.caption || "About photo"}
+            loading={i === 0 ? "eager" : "lazy"}
+            draggable={false}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: `${p.focalX ?? 50}% ${p.focalY ?? 50}%` }}
+            initial={false}
+            animate={{ opacity: i === idx ? 1 : 0, scale: i === idx ? 1 : 1.03 }}
+            transition={{ duration: 0.7, ease: "easeInOut" }}
+          />
+        ))}
+        {/* frame counter */}
+        <div className="absolute top-2 left-2 z-10 font-mono text-[9px] tracking-[0.2em] px-1.5 py-0.5 bg-black/55 text-white/85">
+          {String(idx + 1).padStart(2, "0")} / {String(n).padStart(2, "0")}
+        </div>
+        {/* caption */}
+        {photos[idx]?.caption && (
+          <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/80 to-transparent px-3 pt-8 pb-2.5">
+            <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-white/90">{photos[idx].caption}</p>
+          </div>
+        )}
+        {/* arrows */}
+        {n > 1 && (
+          <>
+            <button aria-label="Previous photo" data-testid="carousel-prev" onClick={() => go(idx - 1)}
+              className="absolute left-1.5 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center bg-black/45 hover:bg-violet text-white font-mono text-sm transition-colors">‹</button>
+            <button aria-label="Next photo" data-testid="carousel-next" onClick={() => go(idx + 1)}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 z-20 w-7 h-7 flex items-center justify-center bg-black/45 hover:bg-violet text-white font-mono text-sm transition-colors">›</button>
+          </>
+        )}
+      </div>
+      {/* dots */}
+      {n > 1 && (
+        <div className="flex items-center justify-center gap-1.5 py-2.5 border-t border-line">
+          {photos.map((_, i) => (
+            <button key={i} aria-label={`Go to photo ${i + 1}`} data-testid={`carousel-dot-${i}`} onClick={() => go(i)}
+              className={`h-1.5 rounded-full transition-all ${i === idx ? "w-5 bg-violet" : "w-1.5 bg-line hover:bg-ink3"}`} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// animated count-up number (fires when scrolled into view)
+export function CountUp({ value = 0, duration = 1500, pad = 2 }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-40px" });
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!inView) return;
+    let raf;
+    const start = performance.now();
+    const tick = (t) => {
+      const p = Math.min(1, (t - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setN(Math.round(eased * value));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, value, duration]);
+  return <span ref={ref} className="tabular-nums">{String(n).padStart(pad, "0")}</span>;
+}
+
+// infinite kinetic marquee band
+export function Marquee({ items = [], reverse = false, speed = 32, accent = false }) {
+  if (!items.length) return null;
+  const doubled = [...items, ...items];
+  return (
+    <div className="overflow-hidden py-1" aria-hidden="true">
+      <motion.div
+        className="flex gap-3 w-max"
+        animate={{ x: reverse ? ["-50%", "0%"] : ["0%", "-50%"] }}
+        transition={{ duration: speed, ease: "linear", repeat: Infinity }}
+      >
+        {doubled.map((it, i) => (
+          <span
+            key={i}
+            className={`shrink-0 px-4 py-2 border font-mono text-[11px] tracking-[0.15em] uppercase whitespace-nowrap ${
+              accent
+                ? "border-violet/40 text-violet bg-violet/5"
+                : "border-line text-ink2 bg-card"
+            }`}
+          >
+            {it}
+          </span>
+        ))}
+      </motion.div>
+    </div>
+  );
+}
 
 // ---------- section components ----------
 
@@ -145,7 +273,7 @@ export function WorkingStudentSection({ profile }) {
               <span className="font-mono text-[9px] tracking-[0.25em] uppercase" style={{ color: item.color }}>{item.tag}</span>
               <p className="mt-1.5 font-mono text-xs text-ink font-semibold">{item.value}</p>
             </Reveal>
-            <span className="font-mono text-xl text-ink3 shrink-0 max-lg:rotate-90 max-lg:mx-auto">+</span>
+            {i < load.length - 1 && <span className="font-mono text-xl text-ink3 shrink-0 max-lg:rotate-90 max-lg:mx-auto">+</span>}
           </div>
         ))}
         <div className="flex items-center gap-3 flex-[1.2]">
@@ -253,12 +381,46 @@ export function BeyondCodeSection({ profile }) {
 export function OffClockSection({ profile }) {
   const g = profile.gaming || {};
   const s = profile.sports || {};
+  const gallery = (profile.sportsGallery || []).filter((p) => p.url);
   const hasSport = (s.items || []).length;
   const hasDigital = (g.digital || []).length;
-  if (!hasSport && !hasDigital) return null;
+  if (!hasSport && !hasDigital && !gallery.length) return null;
   return (
     <div>
       <TechLabel className="block mb-6">{g.heading || "OFF_CLOCK"}</TechLabel>
+      {gallery.length > 0 && (
+        <div className="mb-8" data-testid="sports-gallery">
+          <TechLabel className="block mb-4 text-grn">SPORTS_LOG // {String(gallery.length).padStart(2, "0")}</TechLabel>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {gallery.map((p, i) => (
+              <motion.figure
+                key={i}
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08, duration: 0.5 }}
+                className="group relative overflow-hidden border border-line bg-card"
+                data-testid={`sports-gallery-item-${i}`}
+              >
+                <div className="aspect-[4/5] overflow-hidden">
+                  <img
+                    src={p.url.startsWith("/") ? `${BACKEND}${p.url}` : p.url}
+                    alt={p.alt || p.sport || "Sports photo"}
+                    loading={i === 0 ? "eager" : "lazy"}
+                    className="w-full h-full object-cover grayscale-[0.2] transition-all duration-500 group-hover:grayscale-0 group-hover:scale-[1.04]"
+                    style={{ objectPosition: `${p.focalX ?? 50}% ${p.focalY ?? 50}%` }}
+                  />
+                </div>
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-3 pt-8 pb-2.5">
+                  <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-grn">{p.sport || "SPORT"}</p>
+                  {p.caption && <p className="font-mono text-[9px] tracking-[0.1em] text-white/70 mt-0.5 truncate">{p.caption}</p>}
+                </div>
+              </motion.figure>
+            ))}
+          </div>
+        </div>
+      )}
+      {(hasSport || hasDigital) && (
       <div className="grid sm:grid-cols-2 gap-px bg-line border border-line">
         <div className="bg-card p-6">
           <TechLabel className="block mb-4 text-grn">PHYSICAL</TechLabel>
@@ -278,6 +440,7 @@ export function OffClockSection({ profile }) {
           </ul>
         </div>
       </div>
+      )}
     </div>
   );
 }
@@ -285,15 +448,18 @@ export function OffClockSection({ profile }) {
 export function InterestsSection({ profile }) {
   const items = profile.interests || [];
   if (!items.length) return null;
+  const mid = Math.ceil(items.length / 2);
+  const rowA = items.slice(0, mid);
+  const rowB = items.slice(mid).length ? items.slice(mid) : items;
   return (
     <div>
       <TechLabel className="block mb-5">INTERESTS.INDEX</TechLabel>
-      <div className="flex flex-wrap gap-2">
-        {items.map((it) => (
-          <span key={it} className="px-3 py-1.5 border border-line font-mono text-[10px] tracking-[0.1em] uppercase text-ink2 hover:border-violet hover:text-violet transition-colors cursor-default">
-            {it}
-          </span>
-        ))}
+      <div className="relative panel p-4 space-y-2 overflow-hidden">
+        {/* edge fades */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-16 z-10 bg-gradient-to-r from-card to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-16 z-10 bg-gradient-to-l from-card to-transparent" />
+        <Marquee items={rowA} speed={34} accent />
+        <Marquee items={rowB} speed={40} reverse />
       </div>
     </div>
   );
@@ -371,13 +537,20 @@ export function StatsSection({ profile, ctx }) {
   if (!active.length) return null;
   return (
     <div className={`grid gap-px bg-line border border-line ${active.length > 2 ? "grid-cols-2 lg:grid-cols-" + Math.min(active.length, 5) : "grid-cols-2"}`}>
-      {active.map(([key, code, label]) => (
-        <div key={key} className="bg-card p-6">
+      {active.map(([key, code, label], i) => (
+        <div key={key} className="group relative bg-card p-6 overflow-hidden hover:bg-canvas2/40 transition-colors">
           <TechLabel className="block mb-3">{code}</TechLabel>
-          <div className="font-mono text-3xl sm:text-4xl font-bold text-violet tabular-nums">
-            {key === "experience" ? stats.experienceSince : String(stats[key] ?? 0).padStart(2, "0")}
+          <div className="font-mono text-3xl sm:text-5xl font-bold text-violet tabular-nums">
+            {key === "experience" ? stats.experienceSince : <CountUp value={stats[key] ?? 0} />}
           </div>
           <div className="mt-2 font-mono text-[9px] tracking-[0.2em] uppercase text-ink3">{label}</div>
+          <motion.span
+            className="absolute left-0 bottom-0 h-0.5 bg-violet"
+            initial={{ width: 0 }}
+            whileInView={{ width: "100%" }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.9, delay: 0.2 + i * 0.1, ease: "easeOut" }}
+          />
         </div>
       ))}
     </div>

@@ -3,11 +3,11 @@ import api from "./api";
 
 const ContentContext = createContext(null);
 
-const FALLBACK = {
+const EMPTY_CONTENT = {
   settings: {
-    contactEmail: "", socials: {}, github: "", linkedin: "", available: true,
-    availability: "available", location: "Philippines", siteName: "AMURAO.DEV",
-    version: "PORTFOLIO / 1.1", copyright: "", fullName: "Aleana Rose C. Amurao", title: "",
+    contactEmail: "", contact: {}, socials: {}, github: "", linkedin: "", available: false,
+    availability: "", location: "", siteName: "", version: "", copyright: "", fullName: "", title: "",
+    resumeTitle: "", resumeSummary: "", portrait: "",
   },
   homepage: {},
   about: {},
@@ -34,7 +34,7 @@ const ACCENTS = {
 };
 
 export function ContentProvider({ children }) {
-  const [data, setData] = useState({ ...FALLBACK, loading: true });
+  const [data, setData] = useState({ ...EMPTY_CONTENT, loading: true, error: null });
 
   const load = useCallback(async () => {
     try {
@@ -44,9 +44,10 @@ export function ContentProvider({ children }) {
         const dark = document.documentElement.classList.contains("dark");
         document.documentElement.style.setProperty("--violet", ACCENTS[accent][dark ? "dark" : "light"]);
       }
-      setData({ ...FALLBACK, ...d, settings: { ...FALLBACK.settings, ...d.settings }, loading: false });
-    } catch {
-      setData((prev) => ({ ...prev, loading: false }));
+      setData({ ...EMPTY_CONTENT, ...d, settings: { ...EMPTY_CONTENT.settings, ...d.settings }, loading: false, error: null });
+    } catch (error) {
+      console.error("Portfolio content API failed", error);
+      setData({ ...EMPTY_CONTENT, loading: false, error: error.response?.data?.detail || error.message || "Unable to load content." });
     }
   }, []);
 

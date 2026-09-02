@@ -74,6 +74,7 @@ export default function AboutEditor({ profileId, onBack }) {
   const [device, setDevice] = useState("desktop");
   const [revisions, setRevisions] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [sportsPickerOpen, setSportsPickerOpen] = useState(false);
   const dirtyRef = useRef(false);
   const pRef = useRef(null);
   dirtyRef.current = dirty;
@@ -166,6 +167,31 @@ export default function AboutEditor({ profileId, onBack }) {
     const ph = [...p.photos];
     ph[i] = { ...ph[i], focalX: fx, focalY: fy };
     set("photos", ph);
+  };
+
+  // ---------- sports gallery helpers ----------
+  const addSportsPhoto = (url) => {
+    set("sportsGallery", [...(p.sportsGallery || []), { url, sport: "Sport", caption: "", alt: "", focalX: 50, focalY: 40 }]);
+  };
+  const moveSportsPhoto = (i, dir) => {
+    const ph = [...(p.sportsGallery || [])];
+    const [it] = ph.splice(i, 1);
+    ph.splice(i + dir, 0, it);
+    set("sportsGallery", ph);
+  };
+  const setSportsField = (i, key, value) => {
+    const ph = [...(p.sportsGallery || [])];
+    ph[i] = { ...ph[i], [key]: value };
+    set("sportsGallery", ph);
+  };
+  const setSportsFocal = (i, e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const fx = Math.round(((e.clientX - rect.left) / rect.width) * 100);
+    const fy = Math.round(((e.clientY - rect.top) / rect.height) * 100);
+    setSportsField(i, "focalX", fx);
+    const ph = [...(p.sportsGallery || [])];
+    ph[i] = { ...ph[i], focalX: fx, focalY: fy };
+    set("sportsGallery", ph);
   };
 
   // ---------- sections tab helpers ----------
@@ -366,6 +392,64 @@ export default function AboutEditor({ profileId, onBack }) {
               </div>
             ))}
           </div>
+
+          {/* ---------- SPORTS GALLERY ---------- */}
+          <div className="mt-12 pt-8 border-t border-line">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-mono text-[11px] tracking-[0.25em] text-grn">SPORTS GALLERY</span>
+              <button onClick={() => setSportsPickerOpen(true)} data-testid="sports-photo-add"
+                className="h-9 px-4 border border-grn/50 font-mono text-[10px] tracking-[0.2em] uppercase text-grn hover:bg-grn/10 inline-flex items-center gap-1.5">
+                <Plus size={12} /> Add Sports Photo
+              </button>
+            </div>
+            <p className="font-mono text-[9px] tracking-[0.15em] uppercase text-ink3 mb-5">
+              Shown in the OFF_CLOCK / Sports section — {(p.sportsGallery || []).length} photo(s). Click a photo to set its focal point.
+            </p>
+            <MediaPicker open={sportsPickerOpen} onClose={() => setSportsPickerOpen(false)} onSelect={addSportsPhoto} />
+            {(p.sportsGallery || []).length === 0 && (
+              <div className="panel p-10 text-center">
+                <p className="font-mono text-xs tracking-[0.25em] text-ink3 mb-2">NO SPORTS PHOTOS</p>
+                <p className="font-mono text-[10px] text-ink3">Add match photos (volleyball, futsal, badminton…) from the Media Library.</p>
+              </div>
+            )}
+            <div className="space-y-4">
+              {(p.sportsGallery || []).map((ph, i) => (
+                <div key={i} className="panel p-4 grid sm:grid-cols-[180px_1fr] gap-4" data-testid={`sports-photo-row-${i}`}>
+                  <div>
+                    <div className="relative aspect-[3/4] bg-canvas2 border border-line overflow-hidden cursor-crosshair"
+                      onClick={(e) => setSportsFocal(i, e)} title="Click to set focal point">
+                      <img src={`${process.env.REACT_APP_BACKEND_URL}${ph.url}`} alt={ph.alt || ""}
+                        className="w-full h-full object-cover" style={{ objectPosition: `${ph.focalX}% ${ph.focalY}%` }} />
+                      <span className="absolute w-3 h-3 rounded-full border-2 border-grn bg-grn/40 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                        style={{ left: `${ph.focalX}%`, top: `${ph.focalY}%` }} />
+                    </div>
+                    <p className="mt-1.5 font-mono text-[8px] tracking-[0.15em] text-ink3 uppercase text-center">focal {ph.focalX}% · {ph.focalY}%</p>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-3 content-start">
+                    <div>
+                      <label className={labelCls}>Sport</label>
+                      <input value={ph.sport || ""} onChange={(e) => setSportsField(i, "sport", e.target.value)} className={inputCls}
+                        placeholder="Volleyball" data-testid={`sports-photo-sport-${i}`} />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Caption</label>
+                      <input value={ph.caption || ""} onChange={(e) => setSportsField(i, "caption", e.target.value)} className={inputCls} />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className={labelCls}>Alt Text</label>
+                      <input value={ph.alt || ""} onChange={(e) => setSportsField(i, "alt", e.target.value)} className={inputCls} />
+                    </div>
+                    <div className="sm:col-span-2 flex gap-1.5">
+                      <button onClick={() => moveSportsPhoto(i, -1)} disabled={i === 0} aria-label="Move up" className="p-2 border border-line text-ink3 hover:text-grn disabled:opacity-20"><ArrowUp size={12} /></button>
+                      <button onClick={() => moveSportsPhoto(i, 1)} disabled={i === (p.sportsGallery || []).length - 1} aria-label="Move down" className="p-2 border border-line text-ink3 hover:text-grn disabled:opacity-20"><ArrowDown size={12} /></button>
+                      <button onClick={() => set("sportsGallery", (p.sportsGallery || []).filter((_, j) => j !== i))} aria-label="Remove" className="p-2 border border-line text-pk hover:border-pk"><X size={12} /></button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
       )}
 

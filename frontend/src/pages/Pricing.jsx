@@ -49,21 +49,9 @@ export default function Pricing() {
       <SectionHead num="04 /" title="PRICING"
         sub={est.philosophyBody || "Final pricing depends on scope, integrations, complexity, timeline, and technical requirements."} />
 
-      {/* 01 philosophy */}
-      <Reveal className="panel p-7 sm:p-10 mb-16 border-l-2 bg-grid" style={{ borderLeftColor: "var(--violet)" }}>
-        <TechLabel className="block mb-4">PRICING.PHILOSOPHY</TechLabel>
-        <h2 className="font-display text-2xl sm:text-4xl font-extrabold tracking-tight text-ink leading-tight max-w-3xl">
-          {est.philosophyHeading || "PRICING BUILT AROUND THE SYSTEM, NOT A RANDOM PACKAGE."}
-        </h2>
-        <p className="mt-5 max-w-2xl text-sm text-ink2 leading-relaxed">
-          NO TWO SYSTEMS HAVE THE SAME SCOPE. Starting prices are references, not fixed packages.
-          Flexible development rates for startups, students, small businesses, organizations, and clients needing custom web solutions.
-        </p>
-      </Reveal>
-
-      {/* 02 static/dynamic/system */}
+      {/* 01 static/dynamic/system */}
       <div className="mb-16">
-        <TechLabel className="block mb-5">02 / ARCHITECTURE DETERMINES COST</TechLabel>
+        <TechLabel className="block mb-5">01 / ARCHITECTURE DETERMINES COST</TechLabel>
         <div className="grid md:grid-cols-3 gap-px bg-line border border-line eq-grid">
           {ARCH_EXPLAINER.map((a, i) => (
             <Reveal key={a.code} delay={i * 0.06} className="bg-card p-6 flex flex-col">
@@ -80,9 +68,9 @@ export default function Pricing() {
         </div>
       </div>
 
-      {/* 03 starting references */}
+      {/* 02 starting references */}
       <div className="mb-16">
-        <TechLabel className="block mb-5">03 / STARTING PRICE REFERENCES — EDITABLE RANGES, NOT PACKAGES</TechLabel>
+        <TechLabel className="block mb-5">02 / STARTING PRICE REFERENCES — EDITABLE RANGES, NOT PACKAGES</TechLabel>
         {loading ? (
           <p className="font-mono text-xs text-ink3 animate-blink">LOADING…</p>
         ) : (
@@ -112,15 +100,15 @@ export default function Pricing() {
         )}
       </div>
 
-      {/* 04 estimator */}
+      {/* 03 estimator */}
       <div id="estimator" className="mb-16 scroll-mt-24">
-        <TechLabel className="block mb-5">04 / INTERACTIVE PROJECT ESTIMATOR</TechLabel>
+        <TechLabel className="block mb-5">03 / PROJECT ESTIMATOR</TechLabel>
         <Estimator />
       </div>
 
-      {/* 05 what affects price */}
+      {/* 04 what affects price */}
       <div className="mb-16">
-        <TechLabel className="block mb-5">05 / WHAT AFFECTS THE PRICE?</TechLabel>
+        <TechLabel className="block mb-5">04 / WHAT AFFECTS THE PRICE?</TechLabel>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-px bg-line border border-line">
           {PRICE_FACTORS.map((f, i) => (
             <div key={f} className="bg-card px-4 py-4">
@@ -131,9 +119,9 @@ export default function Pricing() {
         </div>
       </div>
 
-      {/* 06 scope comparison */}
+      {/* 05 scope comparison */}
       <div className="mb-16">
-        <TechLabel className="block mb-5">06 / WHY PAGE COUNT ALONE DOESN'T SET THE PRICE</TechLabel>
+        <TechLabel className="block mb-5">05 / WHY PAGE COUNT ALONE DOESN'T SET THE PRICE</TechLabel>
         <div className="grid md:grid-cols-2 gap-px bg-line border border-line">
           <div className="bg-card p-6">
             <span className="font-mono text-[9px] tracking-[0.25em] text-grn">PROJECT A / EXAMPLE</span>
@@ -157,7 +145,7 @@ export default function Pricing() {
         </p>
       </div>
 
-      {/* 07 CTA */}
+      {/* 06 CTA */}
       <div className="panel p-8 sm:p-12 text-center bg-grid">
         <TechLabel className="block mb-4">CUSTOM SCOPE?</TechLabel>
         <h2 className="font-display text-2xl sm:text-4xl font-extrabold tracking-tight text-ink">

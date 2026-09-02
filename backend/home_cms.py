@@ -73,10 +73,10 @@ def default_homepage_config():
             ],
         },
         "services": {
-            "heading": "SERVICES",
+            "heading": "FEATURED SERVICES",
             "mode": "categories",
             "ids": [],
-            "max": 7,
+            "max": 4,
             "showCount": True,
             "ctaLabel": "VIEW ALL SERVICES →",
         },
@@ -140,21 +140,15 @@ def default_homepage_config():
 async def get_draft():
     doc = await db.homepage_config.find_one({"key": "draft"}, {"_id": 0})
     if not doc:
-        doc = {"key": "draft", "data": default_homepage_config(), "updated_at": now_iso()}
-        await db.homepage_config.insert_one(doc)
-        doc.pop("_id", None)
+        raise HTTPException(status_code=503, detail="Homepage draft is not initialized.")
     return doc
 
 
 async def get_published():
     doc = await db.homepage_config.find_one({"key": "published"}, {"_id": 0})
-    if doc:
-        return doc
-    draft = await get_draft()
-    pub = {"key": "published", "data": draft["data"], "updated_at": now_iso(), "published_at": now_iso()}
-    await db.homepage_config.insert_one(pub)
-    pub.pop("_id", None)
-    return pub
+    if not doc:
+        raise HTTPException(status_code=503, detail="Published homepage is not initialized.")
+    return doc
 
 
 @router.get("")

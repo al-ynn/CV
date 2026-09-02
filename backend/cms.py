@@ -34,6 +34,19 @@ def _coll(name: str):
     return db[name]
 
 
+def validate_project_for_publish(name: str, doc: dict, previous: dict | None = None):
+    """Drafts may be incomplete; published portfolio records require five screenshots."""
+    if name != "projects" or doc.get("status") != "published":
+        return
+    # Existing published projects predate the five-image gallery. Allow ordinary
+    # content edits; enforce the rule for new records and draft-to-published changes.
+    if previous and previous.get("status") == "published":
+        return
+    screenshots = [url for url in (doc.get("screenshots") or []) if isinstance(url, str) and url.strip()]
+    if len(screenshots) != 5:
+        raise HTTPException(status_code=400, detail="Please upload 5 project screenshots before publishing.")
+
+
 async def log_activity(action: str, record: str, collection: str):
     await db.activity.insert_one(
         {"id": str(uuid.uuid4()), "action": action, "record": record, "collection": collection, "at": now()}
@@ -58,6 +71,7 @@ async def create_item(name: str, payload: dict, admin=Depends(get_current_admin)
     doc.setdefault("status", "published")
     if doc["status"] not in STATUSES:
         raise HTTPException(status_code=400, detail="Invalid status")
+    validate_project_for_publish(name, doc)
     doc.setdefault("order", 99)
     doc["archived"] = False
     doc["created_at"] = now()
@@ -79,6 +93,7 @@ async def update_item(name: str, item_id: str, payload: dict, admin=Depends(get_
         doc.pop(k, None)
     if "status" in doc and doc["status"] not in STATUSES:
         raise HTTPException(status_code=400, detail="Invalid status")
+    validate_project_for_publish(name, doc, old)
     doc["updated_at"] = now()
     if name in REVISIONED:
         await db.revisions.update_one(
@@ -195,7 +210,7 @@ async def upload_media(file: UploadFile = File(...), alt: str = "", admin=Depend
     if len(content) > MAX_UPLOAD:
         raise HTTPException(status_code=400, detail="File too large (max 8 MB)")
     media_id = str(uuid.uuid4())
-    result = await put_object(f"amurao-dev/media/{uuid.uuid4().hex}{ALLOWED_MIME[file.content_type]}", content, file.content_type)
+    result = await put_object(f"media/{uuid.uuid4().hex}{ALLOWED_MIME[file.content_type]}", content, file.content_type)
     doc = {
         "id": media_id,
         "storage_path": result["path"],

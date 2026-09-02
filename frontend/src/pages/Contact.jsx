@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import api, { formatApiError } from "../lib/api";
 import { useContent } from "../lib/content";
@@ -7,10 +7,6 @@ import useSeo from "../lib/useSeo";
 import { TechLabel, StatusDot } from "../components/system/bits";
 import DirectChannels from "../components/ContactChannels";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
-
-const DEFAULT_TYPES = ["Full-Stack Web Development", "UI/UX & Product Design", "E-Commerce Development",
-  "Backend, API & Database", "Business / Information System", "WordPress / CMS", "Development Support", "Something else"];
-const DEFAULT_BUDGETS = ["Below ₱10K", "₱10K–₱25K", "₱25K–₱50K", "₱50K–₱100K", "₱100K+", "Not sure yet"];
 
 const inputCls =
   "w-full h-11 px-4 bg-card border border-line font-mono text-xs text-ink placeholder:text-ink3 focus:border-violet focus:outline-none transition-colors";
@@ -20,18 +16,29 @@ export default function Contact() {
   const { settings, estimator } = useContent();
   useSeo("Contact");
   const location = useLocation();
+  const navigate = useNavigate();
   const brief = location.state?.brief;
+  const interestedService = location.state?.service;
 
-  const projectTypes = estimator.projectTypes?.length ? estimator.projectTypes : DEFAULT_TYPES;
-  const budgetOptions = estimator.budgetOptions?.length ? estimator.budgetOptions : DEFAULT_BUDGETS;
+  const projectTypes = estimator.projectTypes || [];
+  const budgetOptions = estimator.budgetOptions || [];
+  const serviceType = interestedService ? projectTypes.find((type) => {
+    const service = interestedService.toLowerCase();
+    const candidate = type.toLowerCase();
+    if (service.includes("store") || service.includes("commerce") || service.includes("payment")) return candidate.includes("commerce");
+    if (service.includes("design") || service.includes("ui") || service.includes("prototype")) return candidate.includes("design");
+    if (service.includes("system") || service.includes("inventory") || service.includes("workflow")) return candidate.includes("system");
+    if (service.includes("wordpress") || service.includes("cms")) return candidate.includes("wordpress") || candidate.includes("cms");
+    return candidate.includes("web") || candidate.includes("development");
+  }) : "";
 
   const [form, setForm] = useState({
     name: "", email: "", company: "",
-    projectType: brief?.type || "",
+    projectType: brief?.type || serviceType || "",
     budget: "", timeline: "",
     message: brief
       ? `Project brief from the estimator:\nType: ${brief.type}\nFeatures: ${brief.features.join(", ") || "—"}\nEstimated range: ${brief.range}\n\nDetails: `
-      : "",
+      : interestedService ? `I'm interested in: ${interestedService}.\n\nProject details: ` : "",
     website: "",
   });
   const [phase, setPhase] = useState("idle");
@@ -64,7 +71,7 @@ export default function Contact() {
     }
     try {
       await api.post("/inquiries", { ...form, brief: brief || undefined });
-      setPhase("done");
+      navigate("/contact/sent", { replace: true, state: { submitted: true } });
     } catch (err) {
       setError(formatApiError(err.response?.data?.detail));
       setPhase("error");
@@ -75,7 +82,15 @@ export default function Contact() {
     fieldErrors[k] ? <p className="mt-1.5 font-mono text-[10px] text-pk" data-testid={`error-${k}`}>{fieldErrors[k]}</p> : null;
 
   return (
-    <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-16 sm:py-24">
+    <div className="relative min-h-screen overflow-hidden bg-grid">
+      <div className="pointer-events-none absolute inset-0"
+        style={{ background: "radial-gradient(circle at 78% 18%, color-mix(in srgb, var(--violet) 10%, transparent), transparent 34%), radial-gradient(circle at 12% 78%, color-mix(in srgb, var(--violet) 7%, transparent), transparent 30%)" }} />
+      <div className="pointer-events-none absolute top-[12%] -right-32 h-96 w-96 border border-violet/15 rotate-45" />
+      <div className="pointer-events-none absolute top-[18%] -right-24 h-96 w-96 border border-line rotate-45" />
+      <div className="pointer-events-none absolute bottom-[8%] -left-40 h-80 w-80 border border-violet/10 rotate-45" />
+      <div className="pointer-events-none absolute top-0 left-[18%] h-px w-[34%] bg-gradient-to-r from-transparent via-violet to-transparent opacity-50" />
+
+      <div className="relative z-10 mx-auto max-w-[1440px] px-5 sm:px-8 py-16 sm:py-24">
       <div className="grid lg:grid-cols-12 gap-14">
         <div className="lg:col-span-5">
           <TechLabel className="block mb-6">06 / TRANSMISSION</TechLabel>
@@ -103,10 +118,6 @@ export default function Contact() {
             </div>
           </div>
 
-          <div className="mt-10">
-            <TechLabel className="block mb-4">DIRECT.CONTACT</TechLabel>
-            <DirectChannels settings={settings} columns="grid-cols-1" testidPrefix="contact-channel" />
-          </div>
         </div>
 
         <div className="lg:col-span-7">
@@ -206,6 +217,12 @@ export default function Contact() {
             )}
           </AnimatePresence>
         </div>
+      </div>
+
+      <section className="mt-14 border-t border-line pt-10" aria-label="Direct contact options">
+        <TechLabel className="block mb-4">DIRECT.CONTACT</TechLabel>
+        <DirectChannels settings={settings} columns="md:grid-cols-3" testidPrefix="contact-channel" compact />
+      </section>
       </div>
     </div>
   );

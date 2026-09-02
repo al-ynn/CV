@@ -19,22 +19,6 @@ export const MARQUEE_ITEMS = [
 
 export const WORK_FILTERS = ["ALL", "FULL STACK", "E-COMMERCE", "INFORMATION SYSTEMS", "UI / UX", "WORDPRESS", "EXPERIMENTS"];
 
-export const PROCESS = [
-  { num: "01", title: "DISCOVERY", items: ["Requirements", "Business Problem", "Scope"] },
-  { num: "02", title: "SYSTEM DESIGN", items: ["Architecture", "Database", "User Flows", "UI / UX"] },
-  { num: "03", title: "BUILD", items: ["Frontend", "Backend", "Integration"] },
-  { num: "04", title: "VALIDATE", items: ["Testing", "Debugging", "Responsive Review"] },
-  { num: "05", title: "SHIP", items: ["Deployment", "Documentation", "Handover"] },
-  { num: "06", title: "SUPPORT", items: ["Maintenance", "Improvements", "Future Iterations"] },
-];
-
-export const WHAT_I_BUILD = [
-  { num: "01", title: "WEB APPLICATIONS", desc: "Database-driven applications with real business logic — not page collections." },
-  { num: "02", title: "E-COMMERCE", desc: "Storefronts with cart, checkout, orders, inventory, and payment integration." },
-  { num: "03", title: "INFORMATION SYSTEMS", desc: "Internal systems that digitize how organizations actually operate." },
-  { num: "04", title: "INTERFACES", desc: "UI/UX designed around user flows, then built pixel-accurate." },
-];
-
 export const peso = (n) => "₱" + (Math.round(n / 500) * 500).toLocaleString("en-PH");
 
 export const periodOf = (e) =>

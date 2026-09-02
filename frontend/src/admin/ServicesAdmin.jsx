@@ -7,7 +7,25 @@ import { Plus, X, ArrowUp, ArrowDown, Copy, Archive, ArchiveRestore, Trash2, Che
 const LEVELS = ["CORE", "PROFICIENT", "WORKING KNOWLEDGE", "FAMILIAR", "LEARNING"];
 const inputCls = "w-full h-9 px-3 bg-canvas border border-line font-mono text-xs text-ink focus:border-violet focus:outline-none";
 const labelCls = "block font-mono text-[10px] tracking-[0.2em] uppercase text-ink3 mb-1.5";
-const EMPTY_CAP = { name: "", shortDesc: "", detail: "", level: "WORKING KNOWLEDGE", technologies: [], projects: [], price: "", featured: false, visible: true };
+const EMPTY_CAP = {
+  name: "", shortDesc: "", detail: "", level: "WORKING KNOWLEDGE",
+  includes: [], goodFor: [], addOns: [], technologies: [], projects: [],
+  price: "", featured: false, visible: true,
+};
+
+const toList = (value) => Array.isArray(value)
+  ? value
+  : String(value || "").split("\n").map((item) => item.trim()).filter(Boolean);
+
+function ListEditor({ label, value, placeholder, onChange }) {
+  return <div>
+    <label className={labelCls}>{label}</label>
+    <textarea rows={4} value={toList(value).join("\n")} onChange={(e) => onChange(toList(e.target.value))}
+      className="w-full px-3 py-2 bg-canvas border border-line font-mono text-xs text-ink focus:border-violet focus:outline-none resize-y"
+      placeholder={placeholder} />
+    <span className="block mt-1 font-mono text-[8px] tracking-[0.12em] uppercase text-ink3">One item per line</span>
+  </div>;
+}
 
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
@@ -22,7 +40,7 @@ export default function ServicesAdmin() {
   const [msg, setMsg] = useState("");
 
   const load = () =>
-    api.get("/admin/collection/services").then(({ data }) => setCats(data.filter((c) => !c.archived)));
+    api.get("/admin/collection/services").then(({ data }) => setCats(data));
   useEffect(() => {
     load();
     api.get("/admin/collection/projects").then(({ data }) => setProjects(data.filter((p) => !p.archived)));
@@ -119,6 +137,10 @@ export default function ServicesAdmin() {
           <div className="sm:col-span-2"><label className={labelCls}>Short Description</label>
             <textarea rows={2} value={catDraft.blurb} onChange={(e) => setCatDraft({ ...catDraft, blurb: e.target.value })}
               className="w-full px-3 py-2 bg-canvas border border-line font-mono text-xs text-ink focus:border-violet focus:outline-none resize-y" /></div>
+          <div className="sm:col-span-2"><label className={labelCls}>Sidebar Introduction</label>
+            <textarea rows={4} value={catDraft.longDescription || ""} onChange={(e) => setCatDraft({ ...catDraft, longDescription: e.target.value })}
+              className="w-full px-3 py-2 bg-canvas border border-line font-mono text-xs text-ink focus:border-violet focus:outline-none resize-y"
+              placeholder="A fuller description shown when visitors click View more." /></div>
           <label className="flex items-center gap-2 font-mono text-[10px] uppercase text-ink2">
             <input type="checkbox" checked={!!catDraft.featured} onChange={(e) => setCatDraft({ ...catDraft, featured: e.target.checked })} className="accent-[#a855f7] w-4 h-4" /> Featured
           </label>
@@ -152,8 +174,14 @@ export default function ServicesAdmin() {
                 <span className="font-display font-bold text-sm text-ink">{cat.num} · {cat.title}</span>
                 <span className="block font-mono text-[10px] text-ink3 mt-0.5">{(cat.capabilities || []).length} capabilities</span>
               </button>
-              <StatusBadge status={cat.status} />
+              <StatusBadge status={cat.status} archived={cat.archived} />
               <div className="flex gap-1.5">
+                {cat.archived ? <>
+                  <button onClick={() => act(() => api.post(`/admin/collection/services/${cat.id}/restore`), "✓ Restored")}
+                    aria-label="Restore" className="p-2 border border-line text-ink3 hover:text-grn"><ArchiveRestore size={12} /></button>
+                  <button onClick={() => window.confirm(`DELETE PERMANENTLY?\n\n${cat.title}\n\nThis cannot be undone.`) && act(() => api.delete(`/admin/collection/services/${cat.id}?hard=true`), "✓ Deleted")}
+                    aria-label="Delete permanently" className="p-2 border border-line text-ink3 hover:text-pk"><Trash2 size={12} /></button>
+                </> : <>
                 <button onClick={() => { setEditingCat(cat.id); setCatDraft({ ...cat }); }} data-testid={`svc-edit-${cat.id}`}
                   className="px-3 h-8 border border-line font-mono text-[9px] uppercase text-ink2 hover:border-violet">Edit</button>
                 <button onClick={() => act(() => api.post(`/admin/collection/services/${cat.id}/duplicate`), "✓ Duplicated as draft")}
@@ -164,6 +192,7 @@ export default function ServicesAdmin() {
                 </button>
                 <button onClick={() => window.confirm(`ARCHIVE CATEGORY?\n\n${cat.title}\n\nHidden publicly, restorable.`) && act(() => api.delete(`/admin/collection/services/${cat.id}`), "✓ Archived")}
                   aria-label="Archive" className="p-2 border border-line text-ink3 hover:text-amb"><Archive size={12} /></button>
+                </>}
                 <button onClick={() => setOpenCat(openCat === cat.id ? null : cat.id)} aria-label="Expand"
                   className="p-2 border border-line text-ink3"><ChevronDown size={12} className={openCat === cat.id ? "rotate-180" : ""} /></button>
               </div>
@@ -226,6 +255,17 @@ export default function ServicesAdmin() {
             <div><label className={labelCls}>Detailed Description</label>
               <textarea rows={3} value={capModal.cap.detail} onChange={(e) => setCapModal({ ...capModal, cap: { ...capModal.cap, detail: e.target.value } })}
                 className="w-full px-3 py-2 bg-canvas border border-line font-mono text-xs text-ink focus:border-violet focus:outline-none resize-y" /></div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <ListEditor label="What Can Be Included" value={capModal.cap.includes}
+                placeholder={'Responsive interface\nAdmin dashboard\nAuthentication and roles'}
+                onChange={(includes) => setCapModal({ ...capModal, cap: { ...capModal.cap, includes } })} />
+              <ListEditor label="Good For" value={capModal.cap.goodFor}
+                placeholder={'Small businesses\nInternal teams\nGrowing online platforms'}
+                onChange={(goodFor) => setCapModal({ ...capModal, cap: { ...capModal.cap, goodFor } })} />
+            </div>
+            <ListEditor label="Optional / Common Add-ons" value={capModal.cap.addOns}
+              placeholder={'Analytics and reporting\nPayment integration\nOngoing maintenance'}
+              onChange={(addOns) => setCapModal({ ...capModal, cap: { ...capModal.cap, addOns } })} />
             <div className="grid grid-cols-2 gap-3">
               <div><label className={labelCls}>Experience Level</label>
                 <select value={capModal.cap.level} onChange={(e) => setCapModal({ ...capModal, cap: { ...capModal.cap, level: e.target.value } })} className={inputCls} data-testid="cap-level">

@@ -38,12 +38,7 @@ export default function Resume() {
 
         <section>
           <TechLabel className="block mb-4 text-violet">01 / PROFILE</TechLabel>
-          <p className="text-sm text-ink2 leading-relaxed max-w-3xl">
-            BS Information Technology student at Central Luzon State University working as a freelance
-            full-stack developer. Experienced in developing real-world systems — e-commerce platforms,
-            information systems, business applications, APIs, databases, administrative dashboards, and
-            client-facing websites — from planning and interface to deployment and documentation.
-          </p>
+          <p className="text-sm text-ink2 leading-relaxed max-w-3xl">{settings.resumeSummary}</p>
         </section>
 
         {education.length > 0 && (

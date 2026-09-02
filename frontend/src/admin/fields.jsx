@@ -167,6 +167,38 @@ function ImageField({ value, onChange }) {
   );
 }
 
+function ImageListField({ value = [], onChange, limit = 5 }) {
+  const [picker, setPicker] = useState(false);
+  const items = Array.isArray(value) ? value.filter(Boolean) : [];
+  const remove = (index) => onChange(items.filter((_, i) => i !== index));
+  return (
+    <div>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        {Array.from({ length: limit }, (_, index) => {
+          const url = items[index];
+          return (
+            <div key={index} className={`relative aspect-video border ${url ? "border-line" : "border-dashed border-line"} bg-canvas2 overflow-hidden`}>
+              {url ? <>
+                <img src={`${process.env.REACT_APP_BACKEND_URL}${url}`} alt={`Project screenshot ${index + 1}`} className="w-full h-full object-contain" />
+                <button type="button" onClick={() => remove(index)} aria-label={`Remove screenshot ${index + 1}`}
+                  className="absolute top-1.5 right-1.5 grid place-items-center w-7 h-7 bg-canvas/90 border border-line text-ink3 hover:text-pk hover:border-pk"><X size={12} /></button>
+              </> : <div className="h-full grid place-items-center text-center p-3"><span className="font-mono text-[9px] tracking-[0.15em] text-ink3">SCREENSHOT<br />{String(index + 1).padStart(2, "0")}</span></div>}
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-3 flex items-center gap-3">
+        <button type="button" onClick={() => setPicker(true)} disabled={items.length >= limit}
+          className="h-10 px-4 border border-line font-mono text-[10px] uppercase text-ink2 hover:border-violet disabled:opacity-40 flex items-center gap-2">
+          <ImageIcon size={13} /> Add Screenshot
+        </button>
+        <span className={`font-mono text-[10px] ${items.length === limit ? "text-grn" : "text-amb"}`}>{items.length} / {limit} selected</span>
+      </div>
+      <MediaPicker open={picker} onClose={() => setPicker(false)} onSelect={(url) => { if (items.length < limit) onChange([...items, url]); }} />
+    </div>
+  );
+}
+
 export function Field({ def, item, onChange, error }) {
   if (def.type === "section") {
     return (
@@ -206,6 +238,7 @@ export function Field({ def, item, onChange, error }) {
       {def.type === "list" && <ListEditor value={value} onChange={set} hint={def.hint} />}
       {def.type === "pipelist" && <PipeListEditor value={value} onChange={set} def={def} />}
       {def.type === "image" && <ImageField value={value} onChange={set} />}
+      {def.type === "imagelist" && <ImageListField value={value} onChange={set} limit={def.exactLength || 5} />}
       {error && <p className="mt-1.5 font-mono text-[10px] text-pk">{error}</p>}
     </div>
   );

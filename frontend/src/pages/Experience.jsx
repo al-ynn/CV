@@ -8,16 +8,36 @@ import { Award, ChevronDown, ExternalLink } from "lucide-react";
 
 const BACKEND = process.env.REACT_APP_BACKEND_URL;
 
+const hashOf = (s) => {
+  let h = 7;
+  for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return h.toString(16).padStart(7, "0").slice(0, 7);
+};
+
+function GitLogChip({ command, color = "var(--violet)" }) {
+  return (
+    <div className="inline-flex items-center gap-2 px-3 py-1.5 border border-line bg-card/70 font-mono text-[9px] tracking-[0.1em] mb-4" data-testid={`gitlog-chip-${(command.split(" ").pop() || "log").replace(/[^a-z]/g, "")}`}>
+      <span className="text-ink3">$</span>
+      <span style={{ color }}>{command}</span>
+      <span className="text-violet animate-blink">▌</span>
+    </div>
+  );
+}
+
 function WorkNode({ e, index }) {
   const [open, setOpen] = useState(false);
   const year = (e.start || "").match(/\d{4}/)?.[0] || e.start;
   return (
     <Reveal delay={index * 0.06} className="relative pl-10 pb-8 last:pb-0">
-      <span className="absolute left-[13px] top-8 bottom-0 w-px bg-line last:hidden" />
+      <span aria-hidden="true" className="timeline-beam absolute left-[13px] top-8 bottom-0 w-px last:hidden" />
       <span className={`absolute left-0 top-1.5 grid place-items-center w-7 h-7 border bg-card ${e.current ? "border-grn" : "border-line"}`}>
         <span className={`w-2 h-2 rounded-full ${e.current ? "bg-grn animate-blink" : "bg-violet"}`} />
       </span>
-      <div className="font-mono text-[10px] tracking-[0.25em] text-violet mb-1.5">{year}{e.current ? " — NOW" : ""}</div>
+      <div className="font-mono text-[10px] tracking-[0.25em] text-violet mb-1.5">
+        <span className="text-ink3 tracking-[0.08em]">{hashOf(e.id)}</span>
+        <span className="text-ink3 mx-2">·</span>
+        {year}{e.current ? " — NOW" : ""}
+      </div>
       <button
         onClick={() => setOpen(!open)}
         aria-expanded={open}
@@ -77,11 +97,15 @@ function CertNode({ c, index }) {
   const hasMore = (c.courses || []).length > 0 || (c.skills || []).length > 0 || c.description || c.image;
   return (
     <Reveal delay={index * 0.06} className="relative pl-10 pb-8 last:pb-0">
-      <span className="absolute left-[13px] top-8 bottom-0 w-px bg-line" />
+      <span aria-hidden="true" className="timeline-beam timeline-beam-amb absolute left-[13px] top-8 bottom-0 w-px" />
       <span className={`absolute left-0 top-1.5 grid place-items-center w-7 h-7 border bg-card transition-colors ${open ? "border-amb" : "border-line"}`}>
         <Award size={13} className="text-amb" />
       </span>
-      <div className="font-mono text-[10px] tracking-[0.25em] text-amb mb-1.5">{c.date}</div>
+      <div className="font-mono text-[10px] tracking-[0.25em] text-amb mb-1.5">
+        <span className="text-ink3 tracking-[0.08em]">{hashOf(c.id)}</span>
+        <span className="text-ink3 mx-2">·</span>
+        {c.date}
+      </div>
       <button
         type="button"
         onClick={() => hasMore && setOpen(!open)}
@@ -165,7 +189,11 @@ export default function Experience() {
   useSeo("Experience");
 
   return (
-    <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-16 sm:py-24">
+    <div className="relative overflow-hidden">
+      <div aria-hidden="true" className="bg-aurora absolute inset-x-0 top-0 h-[30rem] pointer-events-none" />
+      <span aria-hidden="true" className="orb orb-violet orb-float-a hidden md:block" style={{ width: "18rem", height: "18rem", top: "-5rem", left: "-4rem" }} />
+      <span aria-hidden="true" className="orb orb-amber orb-float-b hidden lg:block" style={{ width: "14rem", height: "14rem", top: "6rem", right: "-4rem" }} />
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-16 sm:py-24 relative">
       <SectionHead
         num="05 /"
         title="EXPERIENCE"
@@ -176,6 +204,7 @@ export default function Experience() {
 
       <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
         <section data-testid="work-log">
+          <GitLogChip command="git log --graph --oneline work/" />
           <div className="flex items-center gap-3 mb-8">
             <span className="font-mono text-[10px] tracking-[0.3em] text-violet">WORK.LOG</span>
             <span className="h-px flex-1 bg-line" />
@@ -196,6 +225,7 @@ export default function Experience() {
         </section>
 
         <section data-testid="cert-log">
+          <GitLogChip command="git log --graph --oneline credentials/" color="var(--amber)" />
           <div className="flex items-center gap-3 mb-8">
             <span className="font-mono text-[10px] tracking-[0.3em] text-amb">CERTIFICATION.LOG</span>
             <span className="h-px flex-1 bg-line" />
@@ -207,6 +237,7 @@ export default function Experience() {
             <div>{certifications.map((c, i) => <CertNode key={c.id} c={c} index={i} />)}</div>
           )}
         </section>
+      </div>
       </div>
     </div>
   );

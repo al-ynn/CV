@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { useContent } from "../lib/content";
@@ -22,12 +22,47 @@ function HeroTitle({ text }) {
           <motion.span className="block" initial={{ y: "112%" }} animate={{ y: 0 }}
             transition={{ delay: 0.2 + i * 0.13, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
             {line.split(/(\*[^*]+\*)/g).map((part, j) =>
-              part.startsWith("*") ? <span key={j} className="text-violet">{part.replaceAll("*", "")}</span> : part
+              part.startsWith("*") ? <span key={j} className="gradient-text">{part.replaceAll("*", "")}</span> : part
             )}
           </motion.span>
         </span>
       ))}
     </h1>
+  );
+}
+
+const DEPLOY_LINES = [
+  "$ git push origin main",
+  "▸ build ........ PASSING",
+  "▸ tests ........ ALL OK",
+  "▸ deploy ....... amurao.dev ✓ LIVE",
+];
+
+function DeployLog() {
+  const [text, setText] = useState("");
+  const [line, setLine] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setText(DEPLOY_LINES[DEPLOY_LINES.length - 1]);
+      return;
+    }
+    let i = 0, timer;
+    const current = DEPLOY_LINES[line];
+    const type = () => {
+      i += 1;
+      setText(current.slice(0, i));
+      if (i < current.length) timer = setTimeout(type, 32);
+      else timer = setTimeout(() => setLine((l) => (l + 1) % DEPLOY_LINES.length), 1700);
+    };
+    timer = setTimeout(type, 350);
+    return () => clearTimeout(timer);
+  }, [line]);
+  return (
+    <div className="mt-4 flex items-center gap-2 px-3 py-2 border border-line bg-canvas2/60 font-mono text-[9px] tracking-[0.08em] overflow-hidden whitespace-nowrap" data-testid="hero-deploy-log">
+      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--green)" }} />
+      <span className="truncate" style={{ color: "var(--green)" }}>{text}</span>
+      <span className="text-violet animate-blink shrink-0">▌</span>
+    </div>
   );
 }
 
@@ -91,6 +126,7 @@ function SystemProfile({ cfg, content }) {
             </span>
           ))}
         </div>
+        <DeployLog />
       </div>
     </div>
   );
@@ -128,7 +164,12 @@ function MetricsStrip({ cfg, content }) {
 function FeaturedProjects({ cfg, content, num }) {
   const byId = Object.fromEntries(content.projects.map((p) => [p.id, p]));
   let list = (cfg.ids || []).map((id) => byId[id]).filter(Boolean);
-  if (!list.length) list = content.projects.filter((p) => p.featured);
+  const preferredSlugs = ["soiltrack", "iot-operations-platform", "camela"];
+  const preferred = preferredSlugs.map((slug) => content.projects.find((p) => p.slug === slug)).filter(Boolean);
+  const isLegacySelection = list.some((p) => p.slug === "studya") && !list.some((p) => p.slug === "iot-operations-platform");
+  if (!list.length || isLegacySelection) {
+    list = preferred.length === preferredSlugs.length ? preferred : content.projects.filter((p) => p.featured);
+  }
   list = list.slice(0, cfg.max || 4);
   if (!list.length) return null;
   return (
@@ -154,12 +195,14 @@ function WhatIBuild({ cfg, num }) {
   const items = (cfg.items || []).filter((i) => i.visible);
   if (!items.length) return null;
   return (
-    <section className="border-y border-line bg-canvas2/40" data-testid="home-whatibuild">
-      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
+    <section className="relative border-y border-line bg-canvas2/40 bg-dots overflow-hidden" data-testid="home-whatibuild">
+      <span aria-hidden="true" className="orb orb-violet orb-float-b hidden md:block" style={{ width: "18rem", height: "18rem", top: "10%", right: "-6rem" }} />
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28 relative">
         <SectionHead num={num} bigNum={num} eyebrow="CAPABILITY_INDEX" title={cfg.heading || "WHAT I BUILD"} />
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-px bg-line border border-line eq-grid">
           {items.map((w, i) => (
-            <Reveal key={w.title + i} delay={i * 0.07} className="bg-card p-7 group hover:bg-canvas2/60 transition-colors flex flex-col">
+            <Reveal key={w.title + i} delay={i * 0.07} className="bg-card p-7 group hover:bg-canvas2/60 transition-colors flex flex-col relative overflow-hidden shine">
+              <span aria-hidden="true" className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-violet/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <span className="font-mono text-[10px] tracking-[0.3em] text-violet">{w.techLabel || String(i + 1).padStart(2, "0")}</span>
               <h3 className="mt-4 font-display text-lg font-bold tracking-tight text-ink group-hover:text-violet transition-colors">{w.title}</h3>
               <p className="mt-3 text-sm text-ink2 leading-relaxed line-clamp-4">{w.desc}</p>
@@ -174,20 +217,30 @@ function WhatIBuild({ cfg, num }) {
 function ServicesPreview({ cfg, content, num }) {
   const byId = Object.fromEntries(content.services.map((s) => [s.id, s]));
   let list = (cfg.ids || []).map((id) => byId[id]).filter(Boolean);
-  if (!list.length) list = content.services;
-  list = list.slice(0, cfg.max || 7);
+  const preferredIds = ["fullstack", "uiux", "infosystems", "backend"];
+  const legacyIds = list.map((s) => s.id);
+  const isLegacySelection = !list.length || (legacyIds.includes("ecommerce") && legacyIds.includes("backend"));
+  if (isLegacySelection) {
+    const preferred = preferredIds.map((id) => byId[id]).filter(Boolean);
+    list = preferred.length === 4 ? preferred : content.services;
+  }
+  list = list.slice(0, 4);
+  const homepageLabels = {
+    infosystems: "CUSTOM SYSTEM DEVELOPMENT",
+    backend: "DATABASE DESIGN",
+  };
   if (!list.length) return null;
   return (
     <section className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28" data-testid="home-services">
-      <SectionHead num={num} bigNum={num} eyebrow="SERVICE_INDEX" title={cfg.heading || "SERVICES"}
-        sub="Service areas. Each one a stack of specialized capabilities." />
+      <SectionHead num={num} bigNum={num} eyebrow="SERVICE_INDEX / FEATURED" title={cfg.heading && cfg.heading !== "SERVICES" ? cfg.heading : "FEATURED SERVICES"}
+        sub="Four featured service areas. Explore the full directory for every available capability." />
       <div className="border-t border-line">
         {list.map((s, i) => (
           <Reveal key={s.id} delay={i * 0.04}>
             <Link to="/services" data-testid={`home-service-${s.id}`}
               className="group flex items-center gap-4 sm:gap-8 py-5 border-b border-line hover:bg-canvas2/50 transition-colors px-2 sm:px-4">
               <span className="font-mono text-[11px] text-violet tracking-[0.2em] w-8 shrink-0">{s.num}</span>
-              <span className="font-display text-base sm:text-xl font-bold tracking-tight text-ink group-hover:text-violet group-hover:translate-x-1 transition-all flex-1 min-w-0 truncate">{s.title}</span>
+              <span className="font-display text-base sm:text-xl font-bold tracking-tight text-ink group-hover:text-violet group-hover:translate-x-1 transition-all flex-1 min-w-0 truncate">{homepageLabels[s.id] || s.title}</span>
               {cfg.showCount !== false && (
                 <span className="hidden md:block font-mono text-[9px] tracking-[0.15em] text-ink3 uppercase">
                   {(s.capabilities || []).length} SERVICES
@@ -272,8 +325,10 @@ function TechStack({ cfg, content, num }) {
   list.forEach((t) => { (byCat[t.category || "Other"] = byCat[t.category || "Other"] || []).push(t); });
   const maxRows = Math.max(...Object.values(byCat).map((items) => items.length));
   return (
-    <section className="border-y border-line bg-canvas2/40" data-testid="home-techstack">
-      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
+    <section className="relative border-y border-line bg-canvas2/40 bg-circuit overflow-hidden" data-testid="home-techstack">
+      <span aria-hidden="true" className="orb orb-cyan orb-float-a hidden md:block" style={{ width: "20rem", height: "20rem", top: "-4rem", left: "-4rem" }} />
+      <span aria-hidden="true" className="orb orb-violet orb-float-c hidden lg:block" style={{ width: "16rem", height: "16rem", bottom: "-3rem", right: "-3rem" }} />
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28 relative">
         <SectionHead num={num} bigNum={num} eyebrow="STACK.INDEX" title={cfg.heading || "TECHNICAL\nSTACK"}
           sub={cfg.sub || "Proficiency labeled honestly. Click a technology to see where it's proven."} />
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 eq-grid">
@@ -316,7 +371,7 @@ function Roadmap({ cfg, num }) {
   if (!phases.length) return null;
   return (
     <section className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28" data-testid="home-roadmap">
-      <SectionHead num={num} bigNum={num} eyebrow={cfg.scopeLabel || "DEVELOPMENT WORKFLOW"}
+      <SectionHead num={num} bigNum={num} eyebrow={`${num} / ${cfg.scopeLabel || "DEVELOPMENT WORKFLOW — SYSTEM / WEB / APP PROJECTS"}`}
         title={cfg.heading || "SCRUM / PROTOTYPE\nROADMAP"} />
       <WhyScrum cfg={cfg} />
       <RoadmapCanvas cfg={cfg} />
@@ -326,11 +381,12 @@ function Roadmap({ cfg, num }) {
 
 function ContactChannelsSection({ cfg, content, num }) {
   return (
-    <section className="border-t border-line bg-canvas2/40" data-testid="home-contact-channels">
-      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28">
+    <section className="relative border-t border-line bg-canvas2/40 bg-aurora-soft overflow-hidden" data-testid="home-contact-channels">
+      <span aria-hidden="true" className="orb orb-pink orb-float-b hidden md:block" style={{ width: "18rem", height: "18rem", top: "10%", right: "-4rem" }} />
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-20 sm:py-28 relative">
         <SectionHead num={num} bigNum={num} eyebrow="OPEN.CHANNELS" title={cfg.heading || "DIRECT\nCHANNELS"}
           sub={cfg.sub || "No forms required. Reach me directly through any of these."} />
-        <DirectChannels settings={content.settings} testidPrefix="home-channel" />
+        <DirectChannels settings={content.settings} testidPrefix="home-channel" compact />
       </div>
     </section>
   );
@@ -338,8 +394,10 @@ function ContactChannelsSection({ cfg, content, num }) {
 
 function FinalCta({ cfg, content }) {
   return (
-    <section className="border-t border-line bg-grid" data-testid="home-final-cta">
-      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-24 sm:py-32 text-center">
+    <section className="border-t border-line bg-grid bg-aurora-cta relative overflow-hidden" data-testid="home-final-cta">
+      <span aria-hidden="true" className="orb orb-violet orb-float-a" style={{ width: "26rem", height: "26rem", top: "-8rem", left: "-6rem" }} />
+      <span aria-hidden="true" className="orb orb-cyan orb-float-b hidden md:block" style={{ width: "22rem", height: "22rem", bottom: "-8rem", right: "-6rem" }} />
+      <div className="mx-auto max-w-[1440px] px-5 sm:px-8 py-24 sm:py-32 text-center relative">
         <Reveal>
           <div className="flex items-center justify-center gap-2 mb-6">
             <StatusDot color={content.settings.available ? "var(--green)" : "var(--amber)"} />
@@ -347,18 +405,18 @@ function FinalCta({ cfg, content }) {
           </div>
           <h2 className="font-display font-extrabold tracking-tight leading-[0.95] text-5xl sm:text-7xl text-ink whitespace-pre-line">
             {(cfg.heading || "").split(/(\*[^*]+\*)/g).map((part, j) =>
-              part.startsWith("*") ? <span key={j} className="text-violet">{part.replaceAll("*", "")}</span> : part
+              part.startsWith("*") ? <span key={j} className="gradient-text">{part.replaceAll("*", "")}</span> : part
             )}
           </h2>
           {cfg.body && <p className="mt-6 max-w-xl mx-auto text-sm sm:text-base text-ink2 leading-relaxed">{cfg.body}</p>}
           <div className="mt-10 flex flex-wrap justify-center gap-4">
             <Link to="/contact" data-testid="home-contact-cta"
-              className="inline-flex h-12 items-center px-8 bg-violet font-mono text-[11px] tracking-[0.2em] uppercase font-semibold hover:opacity-90 transition-opacity"
-              style={{ color: "var(--bg)" }}>
-              {cfg.buttonLabel || "LET'S TALK →"}
+              className="group relative inline-flex h-12 items-center px-8 font-mono text-[11px] tracking-[0.2em] uppercase font-semibold hover:opacity-90 transition-opacity overflow-hidden"
+              style={{ color: "var(--bg)", background: "linear-gradient(90deg, var(--violet), color-mix(in srgb, var(--violet) 55%, var(--pink)))" }}>
+              <span className="relative z-10">{cfg.buttonLabel || "LET'S TALK →"}</span>
             </Link>
             <Link to="/pricing#estimator" data-testid="home-estimator-cta"
-              className="inline-flex h-12 items-center px-8 border border-line font-mono text-[11px] tracking-[0.2em] uppercase text-ink hover:border-violet hover:text-violet transition-colors">
+              className="inline-flex h-12 items-center px-8 border border-line font-mono text-[11px] tracking-[0.2em] uppercase text-ink hover:border-violet hover:text-violet transition-colors bg-card/60 backdrop-blur-sm">
               Estimate Scope ₱
             </Link>
           </div>
@@ -398,8 +456,12 @@ export function HomeRenderer({ config, content }) {
       )}
 
       {sections.find((x) => x.key === "hero") && (
-        <section ref={heroRef} className="relative bg-grid overflow-hidden">
-          <div className="mx-auto max-w-[1440px] px-5 sm:px-8 pt-16 sm:pt-24 pb-16 sm:pb-20 grid lg:grid-cols-12 gap-12 items-center">
+        <section ref={heroRef} className="relative bg-grid bg-aurora overflow-hidden">
+          {/* Floating accent orbs — pure CSS, transform-only. */}
+          <span aria-hidden="true" className="orb orb-violet orb-float-a" style={{ width: "22rem", height: "22rem", top: "-6rem", left: "-4rem" }} />
+          <span aria-hidden="true" className="orb orb-cyan orb-float-b hidden md:block" style={{ width: "18rem", height: "18rem", top: "4rem", right: "-4rem" }} />
+          <span aria-hidden="true" className="orb orb-pink orb-float-c hidden lg:block" style={{ width: "14rem", height: "14rem", bottom: "-3rem", left: "40%" }} />
+          <div className="mx-auto max-w-[1440px] px-5 sm:px-8 pt-16 sm:pt-24 pb-16 sm:pb-20 grid lg:grid-cols-12 gap-12 items-center relative">
             <motion.div className="lg:col-span-7" style={{ opacity: heroOpacity }}>
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
                 className="flex items-center gap-3 mb-8">
@@ -431,8 +493,9 @@ export function HomeRenderer({ config, content }) {
                 </Link>
                 {hero.resumeCta !== "" && (
                   <a href={`${BACKEND}/api/resume.pdf`} data-testid="hero-cta-cv"
-                    className="font-mono text-[11px] tracking-[0.2em] uppercase text-ink3 hover:text-violet transition-colors">
-                    {hero.resumeCta || "Download CV ↓"}
+                    className="group inline-flex h-12 items-center gap-3 px-5 border border-violet/50 bg-violet/5 font-mono text-[11px] tracking-[0.18em] uppercase font-semibold text-ink2 hover:text-violet hover:border-violet hover:bg-violet/10 hover:shadow-[0_0_24px_color-mix(in_srgb,var(--violet)_14%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet transition-all">
+                    <span>{(hero.resumeCta || "Download CV").replace(/\s*[↓↧]\s*$/, "")}</span>
+                    <span aria-hidden="true" className="text-violet text-base leading-none group-hover:translate-y-0.5 transition-transform">↓</span>
                   </a>
                 )}
               </motion.div>

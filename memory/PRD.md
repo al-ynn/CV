@@ -68,6 +68,22 @@ aesthetic + polished light mode. Concept: "a résumé encoded into a software in
   resume.pdf from object storage; activity log; export; search; singletons
 - Frontend: home renders CMS content; admin login, dashboard, project list, editor
 
+## Implemented (2026-09-01 v5 — ambient design pass + micro-interactions)
+- Aurora/orb/dot-matrix ambient backgrounds across Home, Services, all 5 About templates
+  (pure transform/opacity CSS, reduced-motion safe, blur reduced on small screens)
+- Cursor Trail: soft violet cursor-follow glow (CursorTrail.jsx, mounted in Layout);
+  desktop fine-pointer only, disabled on touch / reduced-motion / ≤2-core devices
+- Hero Terminal: live typing deployment-log chip inside System Profile panel
+  (DeployLog in Home.jsx, loops 4 log lines; static final line under reduced motion)
+- Case Study polish: aurora band + orbs behind header, gradient-text accent and
+  gradient-fill CTA on the closing panel (CaseStudy.jsx)
+- Experience git-log timeline: deterministic commit-hash prefixes, "$ git log --graph"
+  chips, animated gradient connector beams (.timeline-beam / -amb, reduced-motion safe)
+- Homepage one-click presets (HomepageAdmin.jsx): RECRUITER MODE (hero → tech stack →
+  metrics → projects, skills/CV first), CLIENT MODE (services/projects first), DEFAULT.
+  Reorders draft sections only; active preset auto-detected and highlighted. Recruiter
+  draft currently saved (public unchanged) with a live real-data preview verified.
+
 ## Pending / Notes
 - Owner notification email + public contact email + social URLs: set in Admin →
   Site Settings / Profile (blank = hidden, per no-fabrication rule)
@@ -79,3 +95,26 @@ aesthetic + polished light mode. Concept: "a résumé encoded into a software in
 
 ## Credentials
 See /app/memory/test_credentials.md — admin@amurao.dev / AmuraoDev-2026!
+
+## 2026-06 — Preview URL fix
+- Root cause of "page not viewing properly": frontend/.env had REACT_APP_BACKEND_URL=http://localhost:8001 (set during a prior fork). Works inside pod, fails from external browser.
+- Fix: set REACT_APP_BACKEND_URL to external preview endpoint (env `preview_endpoint`: https://b04cb3fe-b471-4891-b54e-b6ed0b7200e0.preview.emergentagent.com) and restarted frontend.
+- Uploaded backend.zip = identical backend code (CRLF + local venv only), no DB dump. Existing MongoDB (DB_NAME=cv) already seeded with real data.
+- Admin: /admin — admin@amurao.dev / AmuraoDev-2026!
+
+## 2026-06 — About photos added
+- Uploaded 4 user photos to Media Library (3 informal + 1 formal portrait) and placed on published About profile (id 1f470eb4..., template 4).
+  Order: Professional Portrait (anchor) → Working Student → Off_Clock → On Campus, face-focused focal points.
+- FIX: EMERGENT_LLM_KEY was missing from backend/.env → object storage init failed (400) → all media uploads broke. Added key; uploads work.
+- CRUD for photo placement already exists: Admin → About → PHOTOS tab (add/role/caption/alt/focal/reorder/remove → Save Draft → Publish).
+
+## 2026-06 — Sports gallery + carousel + portrait
+- Sports gallery: 3 photos (volleyball/futsal/badminton) on published About profile (sportsGallery array), rendered in OFF_CLOCK section. Admin CRUD in About → PHOTOS tab (SPORTS GALLERY panel).
+- Person Profile (template 4): informal photos now an auto-advancing carousel (PhotoCarousel in AboutSections.jsx, interval 2.6s, arrows/dots/counter/swipe, pause on hover). informalPhotosOf() = photos where role != "Professional Portrait".
+- Formal portrait: exposed in bootstrap settings.portrait (from published about profile's "Professional Portrait" photo); shown as mini pic in Footer; embedded top-right in CV PDF (resume.py build_resume_bytes portrait_bytes + get_portrait_bytes; get_resume_bytes regenerates fresh).
+- Sizing: carousel max-w-[260px], sports grid max-w-2xl (user requested smaller).
+
+## 2026-06 — About page visual polish
+- Added CountUp component (scroll-triggered number count-up) → StatsSection numbers animate 0→value + animated violet underline bar per stat.
+- Added Marquee component (infinite framer-motion x-scroll) → InterestsSection now a dual-row kinetic marquee (opposite directions, accent + neutral rows, edge fades).
+- Fixed layout: person-profile carousel vertically centered (max-w-300px); sports gallery full-width even 3-up band aspect-[4/5].
