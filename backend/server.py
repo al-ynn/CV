@@ -626,10 +626,14 @@ api.include_router(cms.router, prefix="/admin")
 api.include_router(about_cms.router, prefix="/admin/about")
 api.include_router(home_cms.router, prefix="/admin/homepage-config")
 app.include_router(api)
+cors_origins = [origin.strip().rstrip("/") for origin in os.environ.get("CORS_ORIGINS", "").split(",") if origin.strip()]
+if not cors_origins:
+    raise RuntimeError("CORS_ORIGINS must contain at least one allowed frontend origin")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=False,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
+    allow_origins=cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

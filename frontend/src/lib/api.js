@@ -1,6 +1,14 @@
 import axios from "axios";
 
-const api = axios.create({ baseURL: `${process.env.REACT_APP_BACKEND_URL}/api` });
+const configuredBackendUrl = process.env.REACT_APP_BACKEND_URL?.trim();
+const isProductionBuild = process.env.NODE_ENV === "production";
+
+if (!configuredBackendUrl && isProductionBuild) {
+  console.error("REACT_APP_BACKEND_URL is required for production builds.");
+}
+
+const backendUrl = configuredBackendUrl || (isProductionBuild ? "" : "http://localhost:8000");
+const api = axios.create({ baseURL: `${backendUrl.replace(/\/$/, "")}/api` });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("amurao_admin_token");

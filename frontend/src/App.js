@@ -3,6 +3,7 @@ import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { MotionConfig } from "framer-motion";
 import Lenis from "lenis";
+import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "@/lib/theme";
 import { ContentProvider } from "@/lib/content";
 import Layout from "@/components/layout/Layout";
@@ -90,7 +91,9 @@ function App() {
   }, []);
 
   return (
-    <MotionConfig reducedMotion="user">
+    <>
+      <Analytics />
+      <MotionConfig reducedMotion="user">
       <ThemeProvider>
         <ContentProvider>
           <BrowserRouter>
@@ -117,7 +120,8 @@ function App() {
           </BrowserRouter>
         </ContentProvider>
       </ThemeProvider>
-    </MotionConfig>
+      </MotionConfig>
+    </>
   );
 }
 
