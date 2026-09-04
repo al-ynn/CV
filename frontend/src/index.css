@@ -3,27 +3,35 @@
 @tailwind utilities;
 
 :root {
-  --bg: #f7f8fa;
-  --bg2: #eef0f5;
-  --card: #ffffff;
-  --line: #d9dde7;
-  --gridline: rgba(15, 18, 32, 0.055);
-  --tx: #0e1220;
-  --tx2: #3e4658;
-  --tx3: #7a8397;
-  --violet: #6d28d9;
-  --cyan: #0e7490;
-  --pink: #e11d48;
-  --amber: #b45309;
+  --bg: #f8f7ff;
+  --bg2: #f0eefb;
+  --card: #fdfcff;
+  --line: #cbc9df;
+  --gridline: rgba(91, 65, 150, 0.085);
+  --tx: #111426;
+  --tx2: #41465d;
+  --tx3: #6d708c;
+  --violet: #7c3aed;
+  --cyan: #087f9e;
+  --pink: #db2777;
+  --amber: #a84b08;
   --green: #047857;
+  --surface-violet: rgba(124, 58, 237, 0.055);
+  --surface-blue: rgba(37, 99, 235, 0.045);
+  --surface-cyan: rgba(6, 182, 212, 0.045);
+  --surface-pink: rgba(219, 39, 119, 0.035);
+  --line-violet: rgba(124, 58, 237, 0.24);
+  --line-blue: rgba(37, 99, 235, 0.17);
+  --shadow-soft: 0 10px 34px rgba(54, 32, 104, 0.055);
+  --shadow-accent: 0 14px 42px rgba(124, 58, 237, 0.09);
 
   /* Aurora + glow layer (light mode) */
-  --aurora-1: rgba(124, 58, 237, 0.18);
-  --aurora-2: rgba(14, 116, 144, 0.14);
-  --aurora-3: rgba(225, 29, 72, 0.10);
-  --aurora-4: rgba(180, 83, 9, 0.08);
-  --panel-gradient: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(238,240,245,0.6));
-  --hairline-strong: rgba(109, 40, 217, 0.28);
+  --aurora-1: rgba(124, 58, 237, 0.22);
+  --aurora-2: rgba(6, 182, 212, 0.16);
+  --aurora-3: rgba(219, 39, 119, 0.11);
+  --aurora-4: rgba(37, 99, 235, 0.10);
+  --panel-gradient: linear-gradient(145deg, rgba(255,255,255,0.98), rgba(245,243,255,0.88) 55%, rgba(240,249,255,0.78));
+  --hairline-strong: rgba(124, 58, 237, 0.34);
 }
 
 .dark {
@@ -459,6 +467,114 @@
 
 @media (prefers-reduced-motion: reduce) {
   .about-trail-arrows { display: none; }
+}
+
+/* ---------- Light-mode depth system (public site only) ---------- */
+html:not(.dark) body {
+  background:
+    radial-gradient(70rem 36rem at -8% 4%, rgba(168, 85, 247, 0.09), transparent 62%),
+    radial-gradient(62rem 34rem at 108% 16%, rgba(6, 182, 212, 0.085), transparent 64%),
+    linear-gradient(145deg, #faf9ff 0%, var(--bg) 44%, #f3f9ff 100%);
+  background-attachment: fixed;
+}
+
+html:not(.dark) header {
+  border-color: var(--line-violet);
+  background-color: rgba(248, 247, 255, 0.9);
+  box-shadow: 0 1px 0 rgba(37, 99, 235, 0.06), 0 10px 34px rgba(66, 45, 112, 0.035);
+}
+
+html:not(.dark) footer {
+  border-color: var(--line-violet);
+  background:
+    linear-gradient(135deg, var(--surface-violet), var(--surface-blue) 52%, var(--surface-cyan)),
+    var(--bg2);
+}
+
+html:not(.dark) .bg-grid {
+  background-image:
+    linear-gradient(var(--gridline) 1px, transparent 1px),
+    linear-gradient(90deg, var(--gridline) 1px, transparent 1px),
+    radial-gradient(circle at 15% 12%, rgba(124, 58, 237, 0.055), transparent 34%),
+    radial-gradient(circle at 88% 76%, rgba(6, 182, 212, 0.045), transparent 32%);
+}
+
+html:not(.dark) .panel {
+  border-color: var(--line);
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.96), rgba(248,247,255,0.9) 58%, rgba(240,249,255,0.72));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), var(--shadow-soft);
+}
+
+html:not(.dark) .panel-hover:hover,
+html:not(.dark) .card-hover-lift:hover,
+html:not(.dark) .glow-violet-hover:hover {
+  border-color: rgba(124, 58, 237, 0.55);
+  background-color: rgba(245, 243, 255, 0.94);
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.12), var(--shadow-accent);
+}
+
+html:not(.dark) .tech-label {
+  color: #625d82;
+}
+
+html:not(.dark) .section-num-bg {
+  color: var(--violet);
+  opacity: 0.055;
+}
+
+html:not(.dark) main input,
+html:not(.dark) main textarea,
+html:not(.dark) main select {
+  border-color: #c8c5dc;
+  background-color: rgba(253, 252, 255, 0.92);
+  box-shadow: inset 0 1px 2px rgba(49, 37, 87, 0.035);
+}
+
+html:not(.dark) main input:hover,
+html:not(.dark) main textarea:hover,
+html:not(.dark) main select:hover {
+  border-color: rgba(124, 58, 237, 0.42);
+}
+
+html:not(.dark) main input:focus,
+html:not(.dark) main textarea:focus,
+html:not(.dark) main select:focus {
+  border-color: var(--violet);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+html:not(.dark) main [class*="border-line"] {
+  border-color: var(--line);
+}
+
+html:not(.dark) main [class*="bg-canvas2"] {
+  background-color: rgba(240, 238, 251, 0.72);
+}
+
+html:not(.dark) main [class*="border-violet"] {
+  box-shadow: 0 8px 32px rgba(124, 58, 237, 0.055);
+}
+
+html:not(.dark) main [class*="bg-violet/5"],
+html:not(.dark) main [class*="bg-violet/10"] {
+  background-color: rgba(124, 58, 237, 0.075);
+}
+
+html:not(.dark) .about-trail-glow { opacity: 0.3; }
+html:not(.dark) .about-trail-road { opacity: 0.38; }
+html:not(.dark) .about-trail-core { opacity: 0.98; }
+
+/* Keep the CMS on its established neutral light palette. */
+html:not(.dark) .admin-shell {
+  --bg: #f7f8fa;
+  --bg2: #eef0f5;
+  --card: #ffffff;
+  --line: #d9dde7;
+  --gridline: rgba(15, 18, 32, 0.055);
+  --tx: #0e1220;
+  --tx2: #3e4658;
+  --tx3: #7a8397;
 }
 
 @media (max-width: 640px) {
