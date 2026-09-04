@@ -472,28 +472,56 @@
 /* ---------- Light-mode depth system (public site only) ---------- */
 html:not(.dark) body {
   background:
-    radial-gradient(72rem 42rem at -8% 3%, rgba(168, 85, 247, 0.22), transparent 60%),
-    radial-gradient(64rem 38rem at 106% 12%, rgba(6, 182, 212, 0.18), transparent 62%),
-    radial-gradient(50rem 32rem at 52% 92%, rgba(236, 72, 153, 0.11), transparent 65%),
-    linear-gradient(145deg, #f1e7ff 0%, #fbfaff 38%, #e7f5ff 72%, #f4e8ff 100%);
+    radial-gradient(72rem 42rem at -8% 3%, rgba(126, 34, 206, 0.34), transparent 60%),
+    radial-gradient(64rem 38rem at 106% 12%, rgba(8, 145, 178, 0.28), transparent 62%),
+    radial-gradient(50rem 32rem at 52% 92%, rgba(219, 39, 119, 0.2), transparent 65%),
+    linear-gradient(145deg, #dfc8ff 0%, #f7f2ff 36%, #caeaff 72%, #ead1ff 100%);
   background-attachment: fixed;
 }
 
 html:not(.dark) header {
-  border-color: rgba(124, 58, 237, 0.3);
-  background: linear-gradient(100deg, rgba(237, 222, 255, 0.97), rgba(255,255,255,0.96) 48%, rgba(218, 242, 255, 0.97));
-  box-shadow: inset 0 3px 0 rgba(124, 58, 237, 0.72), 0 10px 34px rgba(84, 49, 150, 0.12);
+  border-color: rgba(196, 181, 253, 0.4);
+  background: linear-gradient(105deg, rgba(46, 16, 101, 0.98), rgba(76, 29, 149, 0.98) 48%, rgba(12, 74, 110, 0.98));
+  box-shadow: inset 0 -3px 0 rgba(34, 211, 238, 0.62), 0 12px 38px rgba(46, 16, 101, 0.3);
+}
+
+html:not(.dark) header .text-ink,
+html:not(.dark) header .text-ink2,
+html:not(.dark) header .text-ink3 {
+  color: #f8f7ff;
+}
+
+html:not(.dark) header .text-violet {
+  color: #67e8f9;
+}
+
+html:not(.dark) header button[class*="border-line"] {
+  color: #f8f7ff;
+  border-color: rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.1);
+}
+
+html:not(.dark) header [data-testid="nav-cta"] {
+  background: linear-gradient(135deg, #c084fc, #e879f9);
+  box-shadow: 0 8px 24px rgba(216, 180, 254, 0.3);
 }
 
 html:not(.dark) footer {
-  border-color: rgba(124, 58, 237, 0.35);
+  color: #f8f7ff;
+  border-color: rgba(103, 232, 249, 0.48);
   background:
-    radial-gradient(circle at 8% 20%, rgba(124, 58, 237, 0.2), transparent 30%),
-    radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.16), transparent 32%),
-    linear-gradient(135deg, #e9d5ff, #f5f3ff 45%, #dff5ff),
-    var(--bg2);
-  box-shadow: inset 0 4px 0 rgba(124, 58, 237, 0.68);
+    radial-gradient(circle at 8% 20%, rgba(168, 85, 247, 0.52), transparent 32%),
+    radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.42), transparent 34%),
+    linear-gradient(135deg, #211044, #33145f 48%, #07364b);
+  box-shadow: inset 0 4px 0 rgba(103, 232, 249, 0.7);
 }
+
+html:not(.dark) footer .text-ink,
+html:not(.dark) footer .text-ink2 { color: #f3efff; }
+html:not(.dark) footer .text-ink3 { color: #c8bfe2; }
+html:not(.dark) footer .text-violet,
+html:not(.dark) footer .tech-label { color: #67e8f9; }
+html:not(.dark) footer [class*="border-line"] { border-color: rgba(216, 180, 254, 0.3); }
 
 html:not(.dark) .bg-grid {
   background-image:
@@ -504,27 +532,27 @@ html:not(.dark) .bg-grid {
 }
 
 html:not(.dark) .panel {
-  border-color: rgba(124, 58, 237, 0.27);
+  border-color: rgba(109, 40, 217, 0.42);
   background:
-    linear-gradient(145deg, rgba(255,255,255,0.98), rgba(237, 226, 255, 0.92) 58%, rgba(218, 244, 255, 0.88));
-  box-shadow: inset 0 4px 0 rgba(139, 92, 246, 0.68), 0 18px 46px rgba(76, 44, 132, 0.12);
+    linear-gradient(145deg, #ffffff, #dfc8ff 58%, #bee9f7);
+  box-shadow: inset 0 5px 0 #7c3aed, 0 20px 48px rgba(76, 29, 149, 0.18);
 }
 
 html:not(.dark) main .panel:nth-child(3n + 1) {
-  background: linear-gradient(145deg, #ffffff 4%, #eadbff 100%);
-  border-color: rgba(124, 58, 237, 0.32);
+  background: linear-gradient(145deg, #fff 2%, #d8b4fe 100%);
+  border-color: rgba(109, 40, 217, 0.5);
 }
 
 html:not(.dark) main .panel:nth-child(3n + 2) {
-  background: linear-gradient(145deg, #ffffff 4%, #dceeff 100%);
-  border-color: rgba(37, 99, 235, 0.28);
-  box-shadow: inset 0 4px 0 rgba(37, 99, 235, 0.58), 0 18px 46px rgba(37, 99, 235, 0.1);
+  background: linear-gradient(145deg, #fff 2%, #bae6fd 100%);
+  border-color: rgba(2, 132, 199, 0.44);
+  box-shadow: inset 0 5px 0 #0284c7, 0 20px 48px rgba(3, 105, 161, 0.16);
 }
 
 html:not(.dark) main .panel:nth-child(3n) {
-  background: linear-gradient(145deg, #ffffff 4%, #f5dcf0 100%);
-  border-color: rgba(219, 39, 119, 0.24);
-  box-shadow: inset 0 4px 0 rgba(219, 39, 119, 0.5), 0 18px 46px rgba(219, 39, 119, 0.08);
+  background: linear-gradient(145deg, #fff 2%, #f5bddd 100%);
+  border-color: rgba(190, 24, 93, 0.38);
+  box-shadow: inset 0 5px 0 #db2777, 0 20px 48px rgba(190, 24, 93, 0.14);
 }
 
 html:not(.dark) .panel-hover:hover,
@@ -570,7 +598,7 @@ html:not(.dark) main [class*="border-line"] {
 }
 
 html:not(.dark) main [class*="bg-canvas2"] {
-  background-color: rgba(225, 213, 248, 0.86);
+  background-color: rgba(196, 181, 253, 0.78);
 }
 
 html:not(.dark) main [class*="border-violet"] {
@@ -584,19 +612,19 @@ html:not(.dark) main [class*="bg-violet/10"] {
 
 /* Give large public-page bands a clearly colored identity instead of white-on-white. */
 html:not(.dark) main section:nth-of-type(4n + 1) {
-  background-image: linear-gradient(110deg, rgba(233, 213, 255, 0.72), rgba(255,255,255,0.5) 52%, rgba(219, 239, 255, 0.62));
+  background-image: linear-gradient(110deg, rgba(196, 160, 255, 0.76), rgba(247,242,255,0.74) 52%, rgba(157, 220, 255, 0.7));
 }
 
 html:not(.dark) main section:nth-of-type(4n + 2) {
-  background-image: linear-gradient(110deg, rgba(224, 242, 254, 0.72), rgba(255,255,255,0.52) 50%, rgba(245, 208, 254, 0.56));
+  background-image: linear-gradient(110deg, rgba(125, 211, 252, 0.7), rgba(245,248,255,0.74) 50%, rgba(232, 121, 249, 0.52));
 }
 
 html:not(.dark) main section:nth-of-type(4n + 3) {
-  background-image: linear-gradient(110deg, rgba(250, 232, 255, 0.68), rgba(255,255,255,0.54) 48%, rgba(221, 214, 254, 0.68));
+  background-image: linear-gradient(110deg, rgba(240, 171, 252, 0.62), rgba(250,245,255,0.74) 48%, rgba(167, 139, 250, 0.66));
 }
 
 html:not(.dark) main section:nth-of-type(4n) {
-  background-image: linear-gradient(110deg, rgba(219, 234, 254, 0.66), rgba(255,255,255,0.5) 52%, rgba(237, 213, 255, 0.68));
+  background-image: linear-gradient(110deg, rgba(147, 197, 253, 0.68), rgba(247,245,255,0.74) 52%, rgba(192, 132, 252, 0.68));
 }
 
 html:not(.dark) header button[class*="border-line"],
