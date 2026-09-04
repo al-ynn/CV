@@ -58,7 +58,9 @@ export function ContentProvider({ children }) {
           document.head.appendChild(favicon);
         }
         const separator = faviconUrl.includes("?") ? "&" : "?";
-        favicon.href = `${faviconUrl}${separator}v=${encodeURIComponent(profilePhoto)}`;
+        favicon.href = faviconUrl.startsWith("data:")
+          ? faviconUrl
+          : `${faviconUrl}${separator}v=${encodeURIComponent(profilePhoto)}`;
       } else if (favicon?.dataset.profilePhoto === "true") {
         favicon.remove();
       }

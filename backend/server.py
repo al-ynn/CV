@@ -1,6 +1,7 @@
 import os
 import re
 import uuid
+import base64
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
@@ -114,7 +115,8 @@ async def bootstrap():
             if not media:
                 profile_photo = ""
             else:
-                await get_object(media["storage_path"])
+                data, content_type = await get_object(media["storage_path"])
+                profile_photo = f"data:{content_type};base64,{base64.b64encode(data).decode('ascii')}"
         except FileNotFoundError:
             profile_photo = ""
     settings = {
