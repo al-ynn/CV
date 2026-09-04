@@ -46,7 +46,9 @@ export function ContentProvider({ children }) {
       }
       const profilePhoto = d.settings?.profilePhoto?.trim();
       const backendUrl = process.env.REACT_APP_BACKEND_URL?.trim().replace(/\/$/, "");
-      const faviconUrl = profilePhoto?.startsWith("/")
+      const faviconUrl = profilePhoto?.startsWith("/api/media/files/")
+        ? ""
+        : profilePhoto?.startsWith("/")
         ? (backendUrl ? `${backendUrl}${profilePhoto}` : "")
         : profilePhoto;
       let favicon = document.head.querySelector('link[rel~="icon"]');
