@@ -154,6 +154,7 @@ async def bootstrap():
         "title": profile.get("title", ""),
         "resumeTitle": profile.get("resumeTitle", ""),
         "resumeSummary": profile.get("resumeSummary", ""),
+        "profilePhoto": profile.get("photo", ""),
         "portrait": portrait,
     }
     return {

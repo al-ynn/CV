@@ -7,7 +7,7 @@ const EMPTY_CONTENT = {
   settings: {
     contactEmail: "", contact: {}, socials: {}, github: "", linkedin: "", available: false,
     availability: "", location: "", siteName: "", version: "", copyright: "", fullName: "", title: "",
-    resumeTitle: "", resumeSummary: "", portrait: "",
+    resumeTitle: "", resumeSummary: "", profilePhoto: "", portrait: "",
   },
   homepage: {},
   about: {},
@@ -43,6 +43,23 @@ export function ContentProvider({ children }) {
       if (accent && ACCENTS[accent]) {
         const dark = document.documentElement.classList.contains("dark");
         document.documentElement.style.setProperty("--violet", ACCENTS[accent][dark ? "dark" : "light"]);
+      }
+      const profilePhoto = d.settings?.profilePhoto?.trim();
+      const backendUrl = process.env.REACT_APP_BACKEND_URL?.trim().replace(/\/$/, "");
+      const faviconUrl = profilePhoto?.startsWith("/")
+        ? (backendUrl ? `${backendUrl}${profilePhoto}` : "")
+        : profilePhoto;
+      let favicon = document.head.querySelector('link[rel~="icon"]');
+      if (faviconUrl) {
+        if (!favicon) {
+          favicon = document.createElement("link");
+          favicon.rel = "icon";
+          favicon.dataset.profilePhoto = "true";
+          document.head.appendChild(favicon);
+        }
+        favicon.href = faviconUrl;
+      } else if (favicon?.dataset.profilePhoto === "true") {
+        favicon.remove();
       }
       setData({ ...EMPTY_CONTENT, ...d, settings: { ...EMPTY_CONTENT.settings, ...d.settings }, loading: false, error: null });
     } catch (error) {
