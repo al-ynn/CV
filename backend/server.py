@@ -106,6 +106,17 @@ async def bootstrap():
         photos = about_prof.get("photos") or []
         port = next((ph for ph in photos if ph.get("role") == "Professional Portrait" and ph.get("url")), None)
         portrait = (port or {}).get("url", "")
+    profile_photo = profile.get("photo", "")
+    if profile_photo.startswith("/api/media/files/"):
+        media_id = profile_photo.rstrip("/").split("/")[-1]
+        media = await db.media.find_one({"id": media_id, "is_deleted": {"$ne": True}}, {"_id": 0, "storage_path": 1})
+        try:
+            if not media:
+                profile_photo = ""
+            else:
+                await get_object(media["storage_path"])
+        except FileNotFoundError:
+            profile_photo = ""
     settings = {
         "contactEmail": contact.get("email") or profile.get("contactEmail", ""),
         "contact": {
@@ -131,7 +142,7 @@ async def bootstrap():
         "title": profile.get("title", ""),
         "resumeTitle": profile.get("resumeTitle", ""),
         "resumeSummary": profile.get("resumeSummary", ""),
-        "profilePhoto": profile.get("photo", ""),
+        "profilePhoto": profile_photo,
         "portrait": portrait,
     }
     return {
@@ -157,7 +168,10 @@ async def serve_media(media_id: str):
     doc = await db.media.find_one({"id": media_id, "is_deleted": {"$ne": True}}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Not found")
-    data, content_type = await get_object(doc["storage_path"])
+    try:
+        data, content_type = await get_object(doc["storage_path"])
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Not found")
     return Response(content=data, media_type=doc.get("mime") or content_type)
 
 
