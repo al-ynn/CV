@@ -1,9 +1,8 @@
 import os
 import re
 import uuid
-import secrets
 import logging
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -14,7 +13,7 @@ load_dotenv(ROOT_DIR / ".env")
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends, UploadFile, File
 from fastapi.responses import FileResponse, Response
 from starlette.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr, TypeAdapter, ValidationError
+from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 
 from db import db, client, verify_database_connection
@@ -22,7 +21,6 @@ from auth import (
     create_access_token, verify_password, hash_password, get_current_admin, seed_admin,
     create_indexes, check_lockout, record_failed_attempt, clear_attempts,
 )
-from emailer import send_email, inquiry_notification_html, reset_email_html
 from seed_data import (
     DEFAULT_SERVICES, DEFAULT_PRICING, DEFAULT_PROJECTS,
     SEED_EXPERIENCE, SEED_EDUCATION, SEED_CERTIFICATIONS, SEED_JOURNEY,
@@ -46,30 +44,9 @@ class LoginIn(BaseModel):
     password: str
 
 
-class ForgotIn(BaseModel):
-    email: EmailStr
-
-
-class ResetIn(BaseModel):
-    token: str
-    password: str
-
-
 class PasswordChangeIn(BaseModel):
     current: str
     new: str
-
-
-class InquiryIn(BaseModel):
-    name: str
-    email: EmailStr
-    company: Optional[str] = ""
-    projectType: Optional[str] = ""
-    budget: Optional[str] = ""
-    timeline: Optional[str] = ""
-    message: str
-    brief: Optional[dict] = None
-    website: Optional[str] = ""  # honeypot
 
 
 class InquiryPatch(BaseModel):
@@ -168,34 +145,6 @@ async def bootstrap():
     }
 
 
-@api.post("/inquiries")
-async def create_inquiry(payload: InquiryIn):
-    if payload.website:
-        return {"status": "received"}
-    doc = payload.model_dump(exclude={"website"})
-    site = await get_site_singleton()
-    owner = (
-        site.get("ownerNotifyEmail")
-        or os.environ.get("EMAIL_REPLY_TO")
-        or os.environ.get("EMAIL_FROM_ADDRESS")
-        or ""
-    ).strip()
-    try:
-        TypeAdapter(EmailStr).validate_python(owner)
-    except ValidationError:
-        logger.error("Inquiry email recipient is not configured or is invalid")
-        raise HTTPException(status_code=500, detail="Contact email delivery is not configured.")
-
-    try:
-        await send_email(to=owner, subject=f"New project inquiry — {payload.name}",
-                         html=inquiry_notification_html(doc), reply_to=str(payload.email))
-    except Exception:
-        logger.exception("Inquiry email delivery failed")
-        raise HTTPException(status_code=502, detail="Unable to send your message right now. Please try again.")
-
-    return {"status": "received", "emailed": True}
-
-
 @api.get("/resume.pdf")
 async def resume_pdf():
     data = await get_resume_bytes()
@@ -288,36 +237,6 @@ async def login(payload: LoginIn, request: Request):
 @api.get("/auth/me")
 async def me(admin=Depends(get_current_admin)):
     return admin
-
-
-@api.post("/auth/forgot-password")
-async def forgot_password(payload: ForgotIn):
-    email = payload.email.lower()
-    user = await db.users.find_one({"email": email, "role": "admin"})
-    if user:
-        token = secrets.token_urlsafe(32)
-        await db.password_reset_tokens.insert_one({
-            "token": token, "email": email, "used": False,
-            "expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
-        })
-        link = f"{os.environ.get('FRONTEND_URL', '').rstrip('/')}/admin/reset/{token}"
-        try:
-            await send_email(to=email, subject="Reset your admin password", html=reset_email_html(link))
-        except Exception as e:
-            logger.error(f"Reset email failed: {e}")
-    return {"status": "ok"}
-
-
-@api.post("/auth/reset-password")
-async def reset_password(payload: ResetIn):
-    if len(payload.password) < 8:
-        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
-    rec = await db.password_reset_tokens.find_one({"token": payload.token, "used": False})
-    if not rec or datetime.fromisoformat(rec["expires_at"]) < datetime.now(timezone.utc):
-        raise HTTPException(status_code=400, detail="Reset link is invalid or expired.")
-    await db.users.update_one({"email": rec["email"]}, {"$set": {"password_hash": hash_password(payload.password)}})
-    await db.password_reset_tokens.update_one({"token": payload.token}, {"$set": {"used": True}})
-    return {"status": "ok"}
 
 
 @api.post("/admin/password")
@@ -615,7 +534,6 @@ async def seed_content():
 async def startup():
     await verify_database_connection()
     await create_indexes()
-    await db.password_reset_tokens.create_index("token")
     await seed_admin()
     await seed_content()
     init_storage()

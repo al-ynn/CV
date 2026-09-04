@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import api, { formatApiError } from "../lib/api";
 import { useContent } from "../lib/content";
 import useSeo from "../lib/useSeo";
 import { TechLabel, StatusDot } from "../components/system/bits";
@@ -11,6 +10,10 @@ import { CheckCircle2, AlertTriangle } from "lucide-react";
 const inputCls =
   "w-full h-11 px-4 bg-card border border-line font-mono text-xs text-ink placeholder:text-ink3 focus:border-violet focus:outline-none transition-colors";
 const labelCls = "block font-mono text-[10px] tracking-[0.2em] uppercase text-ink3 mb-2";
+
+const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
 
 export default function Contact() {
   const { settings, estimator } = useContent();
@@ -69,11 +72,39 @@ export default function Contact() {
       await new Promise((r) => setTimeout(r, 420));
       setLogLines((l) => [...l, steps[i]]);
     }
+    if (form.website) {
+      navigate("/contact/sent", { replace: true, state: { submitted: true } });
+      return;
+    }
     try {
-      await api.post("/inquiries", { ...form, brief: brief || undefined });
+      if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+        throw new Error("Contact email delivery is not configured.");
+      }
+      const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          service_id: EMAILJS_SERVICE_ID,
+          template_id: EMAILJS_TEMPLATE_ID,
+          user_id: EMAILJS_PUBLIC_KEY,
+          template_params: {
+            to_email: "aleanaamurao12@gmail.com",
+            name: form.name,
+            email: form.email,
+            company: form.company || "—",
+            project_type: form.projectType,
+            budget: form.budget || "—",
+            timeline: form.timeline || "—",
+            message: form.message,
+            estimator_range: brief?.range || "—",
+            estimator_features: brief?.features?.join(", ") || "—",
+          },
+        }),
+      });
+      if (!response.ok) throw new Error("Unable to send your message right now. Please try again.");
       navigate("/contact/sent", { replace: true, state: { submitted: true } });
     } catch (err) {
-      setError(formatApiError(err.response?.data?.detail));
+      setError(err.message || "Unable to send your message right now. Please try again.");
       setPhase("error");
     }
   };

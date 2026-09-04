@@ -92,11 +92,9 @@ function Section({ id, user }) {
 // ---------- auth screens ----------
 
 function Login({ onLogin }) {
-  const [mode, setMode] = useState("login"); // login | forgot
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
 
   const submit = async (e) => {
@@ -104,14 +102,9 @@ function Login({ onLogin }) {
     setBusy(true);
     setError("");
     try {
-      if (mode === "forgot") {
-        await api.post("/auth/forgot-password", { email });
-        setMsg("✓ If this is the admin email, a reset link has been sent.");
-      } else {
-        const { data } = await api.post("/auth/login", { email, password });
-        localStorage.setItem("amurao_admin_token", data.token);
-        onLogin(data.user);
-      }
+      const { data } = await api.post("/auth/login", { email, password });
+      localStorage.setItem("amurao_admin_token", data.token);
+      onLogin(data.user);
     } catch (err) {
       setError(formatApiError(err.response?.data?.detail));
     } finally {
@@ -123,67 +116,18 @@ function Login({ onLogin }) {
     <div className="min-h-screen bg-canvas bg-grid flex items-center justify-center px-4">
       <form onSubmit={submit} className="panel w-full max-w-sm p-8" data-testid="admin-login-form">
         <span className="font-mono text-[10px] tracking-[0.3em] text-violet">AMURAO.DEV // ADMIN</span>
-        <h1 className="mt-3 font-display text-2xl font-extrabold tracking-tight text-ink">
-          {mode === "forgot" ? "RESET ACCESS" : "SYSTEM ACCESS"}
-        </h1>
+        <h1 className="mt-3 font-display text-2xl font-extrabold tracking-tight text-ink">SYSTEM ACCESS</h1>
         <label className="block mt-7 font-mono text-[10px] tracking-[0.2em] uppercase text-ink3 mb-2">Email</label>
         <input data-testid="admin-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
           className="w-full h-11 px-4 bg-canvas border border-line font-mono text-xs focus:border-violet focus:outline-none" />
-        {mode === "login" && (
-          <>
-            <label className="block mt-4 font-mono text-[10px] tracking-[0.2em] uppercase text-ink3 mb-2">Password</label>
-            <input data-testid="admin-password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-              className="w-full h-11 px-4 bg-canvas border border-line font-mono text-xs focus:border-violet focus:outline-none" />
-          </>
-        )}
+        <label className="block mt-4 font-mono text-[10px] tracking-[0.2em] uppercase text-ink3 mb-2">Password</label>
+        <input data-testid="admin-password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+          className="w-full h-11 px-4 bg-canvas border border-line font-mono text-xs focus:border-violet focus:outline-none" />
         {error && <p className="mt-4 font-mono text-xs text-pk" data-testid="admin-login-error">{error}</p>}
-        {msg && <p className="mt-4 font-mono text-xs text-grn">{msg}</p>}
         <button data-testid="admin-login-submit" disabled={busy}
           className="mt-6 w-full h-11 bg-violet font-mono text-[11px] tracking-[0.2em] uppercase font-semibold disabled:opacity-50"
           style={{ color: "var(--bg)" }}>
-          {busy ? "…" : mode === "forgot" ? "Send Reset Link →" : "Authenticate →"}
-        </button>
-        <button type="button" onClick={() => { setMode(mode === "forgot" ? "login" : "forgot"); setError(""); setMsg(""); }}
-          data-testid="admin-forgot-toggle"
-          className="mt-4 w-full text-center font-mono text-[10px] tracking-[0.15em] uppercase text-ink3 hover:text-violet">
-          {mode === "forgot" ? "← Back to login" : "Forgot password?"}
-        </button>
-      </form>
-    </div>
-  );
-}
-
-function ResetPassword({ token, onDone }) {
-  const [password, setPassword] = useState("");
-  const [msg, setMsg] = useState("");
-  const [error, setError] = useState("");
-
-  const submit = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post("/auth/reset-password", { token, password });
-      setMsg("✓ Password updated. You can log in now.");
-      setTimeout(onDone, 1500);
-    } catch (err) {
-      setError(formatApiError(err.response?.data?.detail));
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-canvas bg-grid flex items-center justify-center px-4">
-      <form onSubmit={submit} className="panel w-full max-w-sm p-8" data-testid="admin-reset-form">
-        <span className="font-mono text-[10px] tracking-[0.3em] text-violet">AMURAO.DEV // ADMIN</span>
-        <h1 className="mt-3 font-display text-2xl font-extrabold tracking-tight text-ink">NEW PASSWORD</h1>
-        <label className="block mt-7 font-mono text-[10px] tracking-[0.2em] uppercase text-ink3 mb-2">New Password</label>
-        <input data-testid="admin-reset-password" type="password" required minLength={8} value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full h-11 px-4 bg-canvas border border-line font-mono text-xs focus:border-violet focus:outline-none" />
-        {error && <p className="mt-4 font-mono text-xs text-pk">{error}</p>}
-        {msg && <p className="mt-4 font-mono text-xs text-grn">{msg}</p>}
-        <button data-testid="admin-reset-submit"
-          className="mt-6 w-full h-11 bg-violet font-mono text-[11px] tracking-[0.2em] uppercase font-semibold"
-          style={{ color: "var(--bg)" }}>
-          Set Password →
+          {busy ? "…" : "Authenticate →"}
         </button>
       </form>
     </div>
@@ -202,7 +146,6 @@ export default function AdminApp() {
   const navigate = useNavigate();
 
   const section = location.pathname.replace(/^\/admin\/?/, "") || "dashboard";
-  const resetMatch = location.pathname.match(/^\/admin\/reset\/(.+)$/);
   const appId = SECTION_TO_APP[section] || "dashboard";
   const app = APPS.find((a) => a.id === appId);
   const activeSection = app?.sections.find((s) => s.id === section);
@@ -220,9 +163,6 @@ export default function AdminApp() {
 
   useEffect(() => { check(); }, [check]);
 
-  if (resetMatch) {
-    return <ResetPassword token={resetMatch[1]} onDone={() => navigate("/admin")} />;
-  }
   if (user === undefined) {
     return <div className="min-h-screen bg-canvas grid place-items-center font-mono text-xs text-ink3 animate-blink">CHECKING SESSION…</div>;
   }
