@@ -14,7 +14,7 @@ load_dotenv(ROOT_DIR / ".env")
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Depends, UploadFile, File
 from fastapi.responses import FileResponse, Response
 from starlette.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, TypeAdapter, ValidationError
 from typing import Optional, List
 
 from db import db, client, verify_database_connection
@@ -172,23 +172,27 @@ async def create_inquiry(payload: InquiryIn):
     if payload.website:
         return {"status": "received"}
     doc = payload.model_dump(exclude={"website"})
-    doc["id"] = str(uuid.uuid4())
-    doc["status"] = "NEW"
-    doc["notes"] = ""
-    doc["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.inquiries.insert_one(doc)
-
     site = await get_site_singleton()
-    owner = (site.get("ownerNotifyEmail") or os.environ.get("EMAIL_FROM_ADDRESS") or "").strip()
-    emailed = False
-    if owner:
-        try:
-            await send_email(to=owner, subject=f"New project inquiry — {payload.name}",
-                             html=inquiry_notification_html(doc), reply_to=payload.email)
-            emailed = True
-        except Exception as e:
-            logger.error(f"Inquiry email failed: {e}")
-    return {"status": "received", "id": doc["id"], "emailed": emailed}
+    owner = (
+        site.get("ownerNotifyEmail")
+        or os.environ.get("EMAIL_REPLY_TO")
+        or os.environ.get("EMAIL_FROM_ADDRESS")
+        or ""
+    ).strip()
+    try:
+        TypeAdapter(EmailStr).validate_python(owner)
+    except ValidationError:
+        logger.error("Inquiry email recipient is not configured or is invalid")
+        raise HTTPException(status_code=500, detail="Contact email delivery is not configured.")
+
+    try:
+        await send_email(to=owner, subject=f"New project inquiry — {payload.name}",
+                         html=inquiry_notification_html(doc), reply_to=str(payload.email))
+    except Exception:
+        logger.exception("Inquiry email delivery failed")
+        raise HTTPException(status_code=502, detail="Unable to send your message right now. Please try again.")
+
+    return {"status": "received", "emailed": True}
 
 
 @api.get("/resume.pdf")
