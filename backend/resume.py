@@ -192,8 +192,13 @@ async def get_portrait_bytes() -> bytes | None:
     media = await db.media.find_one({"id": media_id, "is_deleted": {"$ne": True}}, {"_id": 0})
     if not media:
         return None
+    if media.get("content") is not None:
+        return bytes(media["content"])
     try:
-        data, _ = await get_object(media["storage_path"])
+        storage_path = media.get("storage_path")
+        if not storage_path:
+            return None
+        data, _ = await get_object(storage_path)
         return data
     except Exception:
         return None

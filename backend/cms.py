@@ -1,11 +1,11 @@
 import uuid
 from datetime import datetime, timezone
 
+from bson.binary import Binary
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 
 from db import db
 from auth import get_current_admin
-from storage import put_object
 
 router = APIRouter()
 
@@ -210,13 +210,14 @@ async def upload_media(file: UploadFile = File(...), alt: str = "", admin=Depend
     if len(content) > MAX_UPLOAD:
         raise HTTPException(status_code=400, detail="File too large (max 8 MB)")
     media_id = str(uuid.uuid4())
-    result = await put_object(f"media/{uuid.uuid4().hex}{ALLOWED_MIME[file.content_type]}", content, file.content_type)
     doc = {
         "id": media_id,
-        "storage_path": result["path"],
+        # Render's filesystem is ephemeral. Keeping the binary beside its
+        # metadata makes an upload durable and the insert atomic.
+        "content": Binary(content),
         "filename": file.filename,
         "mime": file.content_type,
-        "size": result["size"],
+        "size": len(content),
         "alt": alt,
         "is_deleted": False,
         "url": f"/api/media/files/{media_id}",
@@ -224,13 +225,16 @@ async def upload_media(file: UploadFile = File(...), alt: str = "", admin=Depend
     }
     await db.media.insert_one(doc)
     doc.pop("_id", None)
+    doc.pop("content", None)
     await log_activity("uploaded", file.filename, "media")
     return doc
 
 
 @router.get("/media")
 async def list_media(admin=Depends(get_current_admin)):
-    return await db.media.find({"is_deleted": {"$ne": True}}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return await db.media.find(
+        {"is_deleted": {"$ne": True}}, {"_id": 0, "content": 0}
+    ).sort("created_at", -1).to_list(500)
 
 
 @router.put("/media/{media_id}")

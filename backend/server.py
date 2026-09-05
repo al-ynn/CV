@@ -110,14 +110,24 @@ async def bootstrap():
     profile_photo = profile.get("photo", "")
     if profile_photo.startswith("/api/media/files/"):
         media_id = profile_photo.rstrip("/").split("/")[-1]
-        media = await db.media.find_one({"id": media_id, "is_deleted": {"$ne": True}}, {"_id": 0, "storage_path": 1})
+        media = await db.media.find_one(
+            {"id": media_id, "is_deleted": {"$ne": True}},
+            {"_id": 0, "content": 1, "storage_path": 1, "mime": 1},
+        )
         try:
             if not media:
                 profile_photo = ""
+            elif media.get("content") is not None:
+                data = bytes(media["content"])
+                content_type = media.get("mime") or "application/octet-stream"
             else:
-                data, content_type = await get_object(media["storage_path"])
+                storage_path = media.get("storage_path")
+                if not storage_path:
+                    raise FileNotFoundError(media_id)
+                data, content_type = await get_object(storage_path)
+            if media:
                 profile_photo = f"data:{content_type};base64,{base64.b64encode(data).decode('ascii')}"
-        except FileNotFoundError:
+        except (FileNotFoundError, OSError, ValueError):
             profile_photo = ""
     settings = {
         "contactEmail": contact.get("email") or profile.get("contactEmail", ""),
@@ -170,11 +180,24 @@ async def serve_media(media_id: str):
     doc = await db.media.find_one({"id": media_id, "is_deleted": {"$ne": True}}, {"_id": 0})
     if not doc:
         raise HTTPException(status_code=404, detail="Not found")
-    try:
-        data, content_type = await get_object(doc["storage_path"])
-    except FileNotFoundError:
+    if doc.get("content") is not None:
+        data = bytes(doc["content"])
+        content_type = doc.get("mime") or "application/octet-stream"
+    else:
+        try:
+            storage_path = doc.get("storage_path")
+            if not storage_path:
+                raise FileNotFoundError(media_id)
+            data, content_type = await get_object(storage_path)
+        except (FileNotFoundError, OSError, ValueError):
+            raise HTTPException(status_code=404, detail="Image file is no longer available; upload it once more to migrate it to persistent storage.")
+    if not data:
         raise HTTPException(status_code=404, detail="Not found")
-    return Response(content=data, media_type=doc.get("mime") or content_type)
+    return Response(
+        content=data,
+        media_type=doc.get("mime") or content_type,
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
 
 
 @api.get("/sitemap.xml")
